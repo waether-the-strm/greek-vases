@@ -1,3 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
 # Project-Specific Rules: Greek Vases
 
 These rules apply to the entire Greek Vases project and supplement/override global rules.
