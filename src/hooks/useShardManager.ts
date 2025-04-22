@@ -109,7 +109,6 @@ export const useShardManager = ({ sceneRef }: ShardManagerProps) => {
   // Function to update shard physics in the animation loop
   const updateShards = useCallback(() => {
     if (!sceneRef.current) return;
-    const scene = sceneRef.current;
 
     for (let i = shardsRef.current.length - 1; i >= 0; i--) {
       const shard = shardsRef.current[i];
@@ -127,30 +126,36 @@ export const useShardManager = ({ sceneRef }: ShardManagerProps) => {
       if (shard.position.y < 0.05) {
         shard.position.y = 0.05;
         userData.velocity.y = -userData.velocity.y * 0.3; // Bounce
-        userData.velocity.x *= 0.8; // Friction
-        userData.velocity.z *= 0.8; // Friction
 
+        // Apply friction only if moving horizontally significantly
         if (
-          Math.abs(userData.velocity.y) < 0.005 &&
-          userData.velocity.lengthSq() < 0.0001
+          Math.abs(userData.velocity.x) > 0.001 ||
+          Math.abs(userData.velocity.z) > 0.001
+        ) {
+          userData.velocity.x *= 0.7; // Increased friction
+          userData.velocity.z *= 0.7; // Increased friction
+        } else {
+          // If horizontal movement is negligible, stop it completely
+          userData.velocity.x = 0;
+          userData.velocity.z = 0;
+        }
+
+        // Stop bouncing if vertical velocity is very low
+        if (Math.abs(userData.velocity.y) < 0.01) {
+          userData.velocity.y = 0;
+        }
+
+        // Check if the shard is essentially stopped on the ground
+        if (
+          Math.abs(userData.velocity.y) < 0.003 && // Check vertical velocity is near zero
+          userData.velocity.lengthSq() < 0.00001 // Check overall speed is very low
         ) {
           userData.onGround = true;
           userData.velocity.set(0, 0, 0);
           userData.rotationSpeed.set(0, 0, 0);
 
-          // Optional: Schedule removal of the shard from the scene and array
-          setTimeout(() => {
-            scene.remove(shard);
-            // Ensure geometry and material are disposed
-            if (shard.geometry) shard.geometry.dispose();
-            if (shard.material instanceof THREE.Material)
-              shard.material.dispose();
-            else if (Array.isArray(shard.material)) {
-              shard.material.forEach((m) => m.dispose());
-            }
-            // Remove from ref array
-            shardsRef.current = shardsRef.current.filter((s) => s !== shard);
-          }, 5000 + Math.random() * 5000); // Remove after 5-10 seconds
+          // Removed the setTimeout for automatic shard removal
+          // Shards will now remain on the ground indefinitely
         }
       }
     }
