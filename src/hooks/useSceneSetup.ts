@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
 import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 interface SceneSetupProps {
   mountRef: React.RefObject<HTMLDivElement>;
@@ -8,9 +9,7 @@ interface SceneSetupProps {
 
 // Helper functions for environment setup (internal to the hook)
 const setupLights = (scene: THREE.Scene) => {
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-  scene.add(ambientLight);
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
   directionalLight.position.set(5, 10, 7.5);
   directionalLight.castShadow = true;
   directionalLight.shadow.mapSize.width = 2048;
@@ -24,56 +23,38 @@ const setupLights = (scene: THREE.Scene) => {
   directionalLight.shadow.radius = 4;
   directionalLight.shadow.bias = -0.0005;
   scene.add(directionalLight);
-  const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
-  fillLight.position.set(-5, 8, -7.5);
-  fillLight.castShadow = false;
-  scene.add(fillLight);
-  // Return lights for cleanup
-  return [ambientLight, directionalLight, fillLight];
+  return [directionalLight];
 };
 
+// Reintroduce setupFloor function with PlaneGeometry
 const setupFloor = (scene: THREE.Scene) => {
-  const floorGeometry = new THREE.BoxGeometry(10, 0.2, 30);
+  const floorGeometry = new THREE.PlaneGeometry(50, 50); // Large plane
   const floorMaterial = new THREE.MeshStandardMaterial({
-    color: 0xf5f5f5,
-    roughness: 0.5,
-    metalness: 0.0,
+    color: 0x555555, // Different gray for visibility
+    roughness: 0.8,
+    metalness: 0.1,
+    side: THREE.DoubleSide, // Render both sides just in case
   });
   const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-  floor.position.y = -0.1;
+  floor.rotation.x = -Math.PI / 2; // Rotate plane to be horizontal
+  floor.position.y = 0; // Position at ground level
   floor.receiveShadow = true;
   scene.add(floor);
-  // Return floor for cleanup
+  console.log(
+    "Floor parent UUID:",
+    floor.parent?.uuid,
+    "Scene UUID:",
+    scene.uuid
+  ); // Log parent UUID
   return floor;
-};
-
-const setupWalls = (scene: THREE.Scene) => {
-  const wallMaterial = new THREE.MeshStandardMaterial({
-    color: 0xfafafa,
-    roughness: 0.2,
-  });
-  const leftWall = new THREE.Mesh(
-    new THREE.BoxGeometry(0.2, 5, 30),
-    wallMaterial
-  );
-  leftWall.position.set(-10, 2.5, 0);
-  leftWall.receiveShadow = true;
-  scene.add(leftWall);
-  const rightWall = new THREE.Mesh(
-    new THREE.BoxGeometry(0.2, 5, 30),
-    wallMaterial
-  );
-  rightWall.position.set(10, 2.5, 0);
-  rightWall.receiveShadow = true;
-  scene.add(rightWall);
-  // Return walls for cleanup
-  return [leftWall, rightWall];
 };
 
 export const useSceneSetup = ({ mountRef, cameraHeight }: SceneSetupProps) => {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const pmremGeneratorRef = useRef<THREE.PMREMGenerator | null>(null);
+  const environmentTextureRef = useRef<THREE.Texture | null>(null);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -82,17 +63,7 @@ export const useSceneSetup = ({ mountRef, cameraHeight }: SceneSetupProps) => {
     const width = currentMount.clientWidth;
     const height = currentMount.clientHeight;
 
-    // Scene
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xffffff);
-    sceneRef.current = scene;
-
-    // Camera
-    const camera = new THREE.PerspectiveCamera(70, width / height, 0.1, 1000);
-    camera.position.set(0, cameraHeight, -12); // Initial position consistent with player start
-    cameraRef.current = camera;
-
-    // Renderer
+    // Renderer (Setup earlier to be used by PMREMGenerator)
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
     renderer.shadowMap.enabled = true;
@@ -103,10 +74,28 @@ export const useSceneSetup = ({ mountRef, cameraHeight }: SceneSetupProps) => {
     currentMount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
+    // PMREMGenerator for RoomEnvironment
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    pmremGeneratorRef.current = pmremGenerator;
+
+    // Scene
+    const scene = new THREE.Scene();
+    const environment = new RoomEnvironment();
+    const envTexture = pmremGenerator.fromScene(environment, 0.04).texture;
+    scene.environment = envTexture;
+    scene.background = new THREE.Color(0x333333);
+    environmentTextureRef.current = envTexture;
+    environment.dispose();
+    sceneRef.current = scene;
+
+    // Camera
+    const camera = new THREE.PerspectiveCamera(70, width / height, 0.01, 1000);
+    camera.position.set(0, cameraHeight, -12);
+    cameraRef.current = camera;
+
     // Setup environment elements
     const lights = setupLights(scene);
-    const floor = setupFloor(scene);
-    const walls = setupWalls(scene);
+    const floor = setupFloor(scene); // Add floor setup again
 
     // Basic resize handling within the setup hook
     const handleResize = () => {
@@ -128,25 +117,30 @@ export const useSceneSetup = ({ mountRef, cameraHeight }: SceneSetupProps) => {
 
       // Cleanup environment elements
       lights.forEach((light) => scene.remove(light));
+      // Add floor cleanup again
       if (floor) {
         scene.remove(floor);
         floor.geometry.dispose();
-        if (floor.material instanceof THREE.Material) floor.material.dispose();
+        if (Array.isArray(floor.material)) {
+          floor.material.forEach((m) => m.dispose());
+        } else {
+          floor.material.dispose();
+        }
       }
-      if (walls) {
-        walls.forEach((wall) => {
-          scene.remove(wall);
-          wall.geometry.dispose();
-          // Dispose material only once if shared (it's not shared here)
-          if (wall.material instanceof THREE.Material) wall.material.dispose();
-        });
+
+      // Cleanup environment map and generator
+      if (environmentTextureRef.current) {
+        environmentTextureRef.current.dispose();
+        environmentTextureRef.current = null;
+      }
+      if (pmremGeneratorRef.current) {
+        pmremGeneratorRef.current.dispose();
+        pmremGeneratorRef.current = null;
       }
 
       // Cleanup renderer
       if (rendererRef.current) {
-        // Dispose renderer resources
         rendererRef.current.dispose();
-        // Check if the renderer's DOM element is still a child before removing
         if (rendererRef.current.domElement.parentNode === currentMount) {
           currentMount.removeChild(rendererRef.current.domElement);
         }
@@ -157,7 +151,7 @@ export const useSceneSetup = ({ mountRef, cameraHeight }: SceneSetupProps) => {
       cameraRef.current = null;
       rendererRef.current = null;
     };
-  }, [mountRef, cameraHeight]); // Rerun effect if mountRef or cameraHeight changes
+  }, [mountRef, cameraHeight]);
 
   return { sceneRef, cameraRef, rendererRef };
 };

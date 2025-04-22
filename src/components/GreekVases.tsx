@@ -3,6 +3,7 @@ import { usePlayerControls } from "../hooks/usePlayerControls";
 import { useVaseManager } from "../hooks/useVaseManager";
 import { useSceneSetup } from "../hooks/useSceneSetup";
 import { useShardManager } from "../hooks/useShardManager";
+import { useGalleryLoader } from "../hooks/useGalleryLoader";
 // Remove empty import block
 // import {
 // } from "../features/greek-vases/threeUtils";
@@ -17,6 +18,9 @@ const GreekVases = () => {
     mountRef,
     cameraHeight,
   });
+
+  // Load the gallery model using the new hook
+  useGalleryLoader({ sceneRef });
 
   // Pass refs from useSceneSetup to other hooks
   const { updatePlayerPosition } = usePlayerControls({
