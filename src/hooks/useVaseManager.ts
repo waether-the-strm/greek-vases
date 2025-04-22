@@ -6,6 +6,33 @@ import {
   playBreakSound,
 } from "../features/greek-vases/threeUtils";
 
+// Function to recursively dispose of object resources
+const disposeObject = (object: THREE.Object3D) => {
+  if (object instanceof THREE.Mesh) {
+    if (object.geometry) {
+      object.geometry.dispose();
+    }
+    if (object.material) {
+      if (Array.isArray(object.material)) {
+        object.material.forEach((material) => {
+          if (material.map) material.map.dispose();
+          // Dispose other maps if needed (normalMap, envMap, etc.)
+          material.dispose();
+        });
+      } else {
+        if (object.material.map) object.material.map.dispose();
+        // Dispose other maps if needed
+        object.material.dispose();
+      }
+    }
+  }
+  // Recursively dispose children
+  while (object.children.length > 0) {
+    disposeObject(object.children[0]);
+    object.remove(object.children[0]); // Remove child after disposal
+  }
+};
+
 // Define types for clarity
 interface VaseManagerProps {
   sceneRef: React.RefObject<THREE.Scene | null>;
@@ -30,6 +57,7 @@ export const useVaseManager = ({
   const vasesRef = useRef<THREE.Mesh[]>([]); // Use ref to store the array of vase meshes
   const brokenVasesSetRef = useRef<Set<THREE.Mesh>>(new Set()); // Use ref for the set of broken vases
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const pedestalsRef = useRef<THREE.Group[]>([]); // Ref to store pedestals
 
   // Callback to notify about a broken vase (for shard creation)
   const onVaseBrokenRef = useRef<(info: BrokenVaseInfo) => void>(() => {});
@@ -39,32 +67,45 @@ export const useVaseManager = ({
     if (!sceneRef.current) return;
     const scene = sceneRef.current;
 
-    // Clear previous vases if any (e.g., on hot reload or component remount)
-    vasesRef.current.forEach((vase) => vase.parent?.remove(vase));
-    vasesRef.current = [];
+    // Clear previous objects managed by this hook
+    pedestalsRef.current.forEach((p) => {
+      scene.remove(p);
+      disposeObject(p); // Dispose pedestal and its children
+    });
+    pedestalsRef.current = [];
+    vasesRef.current = []; // Vases are children of pedestals, disposed above
     brokenVasesSetRef.current.clear();
 
     const newVases: THREE.Mesh[] = [];
+    const newPedestals: THREE.Group[] = [];
+
     for (let i = -5; i <= 5; i += 2.5) {
       const leftPedestal = createPedestal(-5, i * 2);
       const rightPedestal = createPedestal(5, i * 2);
 
       scene.add(leftPedestal);
       scene.add(rightPedestal);
+      newPedestals.push(leftPedestal, rightPedestal);
 
       const leftVase = createVaseOnPedestal(leftPedestal, -5, i * 2);
       const rightVase = createVaseOnPedestal(rightPedestal, 5, i * 2);
       newVases.push(leftVase, rightVase);
     }
-    vasesRef.current = newVases; // Update the ref with the created vases
+    vasesRef.current = newVases;
+    pedestalsRef.current = newPedestals; // Store pedestals
 
-    // Simple cleanup for pedestals and vases added by this effect
+    // Cleanup function for this effect
     return () => {
-      if (sceneRef.current) {
-        newVases.forEach((vase) => vase.parent?.removeFromParent()); // Remove vases
-        // Pedestals are harder to track cleanly here without more state,
-        // assuming full scene cleanup happens elsewhere for now.
+      const currentScene = sceneRef.current; // Capture sceneRef value
+      // Check if scene still exists during cleanup
+      if (currentScene) {
+        pedestalsRef.current.forEach((p) => {
+          currentScene.remove(p); // Remove from the scene
+          disposeObject(p); // Dispose pedestal and its children (including textures)
+        });
       }
+      // Clear refs
+      pedestalsRef.current = [];
       vasesRef.current = [];
       brokenVasesSetRef.current.clear();
     };
@@ -96,8 +137,17 @@ export const useVaseManager = ({
           const baseColor =
             baseMaterial.color?.clone() || new THREE.Color(0xe8b27d);
 
-          // Remove vase from scene
-          vase.parent?.remove(vase);
+          // IMPORTANT: Dispose vase resources BEFORE removing from parent
+          if (baseMaterial.map) {
+            baseMaterial.map.dispose(); // Dispose vase texture
+          }
+          baseMaterial.dispose();
+          if (vase.geometry) {
+            vase.geometry.dispose();
+          }
+
+          // Remove vase from scene (parent pedestal)
+          vase.removeFromParent();
 
           // Remove vase from the internal ref array
           vasesRef.current = vasesRef.current.filter((v) => v !== vase);
