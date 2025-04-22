@@ -28,7 +28,7 @@ export const usePlayerControls = ({
   const playerStateRef = useRef<PlayerState>({
     position: initialPosition.clone(),
     velocity: new THREE.Vector3(),
-    rotation: new THREE.Euler(0, 0, 0, "YXZ"),
+    rotation: new THREE.Euler(0, Math.PI, 0, "YXZ"),
     moveForward: false,
     moveBackward: false,
     moveLeft: false,
@@ -101,8 +101,8 @@ export const usePlayerControls = ({
     const velocity = player.velocity; // Use velocity from state
     const direction = new THREE.Vector3();
 
-    direction.z = Number(player.moveForward) - Number(player.moveBackward);
-    direction.x = Number(player.moveLeft) - Number(player.moveRight);
+    direction.z = Number(player.moveBackward) - Number(player.moveForward);
+    direction.x = Number(player.moveRight) - Number(player.moveLeft);
     direction.normalize(); // Ensure consistent speed in all directions
 
     // Simplified velocity calculation (adjust speed factor as needed)
