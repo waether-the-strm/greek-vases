@@ -94,3 +94,19 @@ body {
 .read-the-docs {
   color: #888;
 }
+
+/* Styles for the initial instruction overlay */
+.instruction-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 24px; /* Adjust size as needed */
+  font-family: Arial, sans-serif; /* Or use a project-specific font */
+  text-align: center;
+  pointer-events: none; /* Prevent it from interfering with clicks */
+  background: rgba(0, 0, 0, 0.5); /* Optional background for readability */
+  padding: 20px;
+  border-radius: 10px;
+}

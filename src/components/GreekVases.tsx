@@ -160,6 +160,13 @@ const GreekVases = () => {
         }}
         data-testid="crosshair"
       />
+
+      {/* New Instruction Text - Visible only when pointer is not locked */}
+      {!isPointerLocked && (
+        <div className="instruction-overlay" data-testid="instruction-overlay">
+          Kliknij, aby rozpocząć
+        </div>
+      )}
     </div>
   );
 };
