@@ -98,10 +98,13 @@ export const usePlayerControls = ({
     if (!cameraRef.current) return;
 
     const player = playerStateRef.current;
+    const camera = cameraRef.current;
     const velocity = player.velocity; // Use velocity from state
     const direction = new THREE.Vector3();
 
+    // Corrected: W -> -Z (local), S -> +Z (local)
     direction.z = Number(player.moveBackward) - Number(player.moveForward);
+    // Corrected: A -> -X (local), D -> +X (local)
     direction.x = Number(player.moveRight) - Number(player.moveLeft);
     direction.normalize(); // Ensure consistent speed in all directions
 
@@ -115,15 +118,41 @@ export const usePlayerControls = ({
     const moveDirection = new THREE.Vector3(velocity.x, 0, velocity.z);
     moveDirection.applyEuler(euler);
 
-    // Update camera position
-    cameraRef.current.position.x += moveDirection.x;
-    cameraRef.current.position.z += moveDirection.z;
+    // Calculate potential next position
+    const nextPosition = camera.position.clone().add(moveDirection);
+
+    // Define boundaries (with buffer)
+    const bounds = {
+      xMin: -9.5,
+      xMax: 9.5,
+      zMin: -14.5,
+      zMax: 14.5,
+    };
+
+    // Check and apply boundaries
+    let allowedMoveX = true;
+    let allowedMoveZ = true;
+
+    if (nextPosition.x < bounds.xMin || nextPosition.x > bounds.xMax) {
+      allowedMoveX = false;
+    }
+    if (nextPosition.z < bounds.zMin || nextPosition.z > bounds.zMax) {
+      allowedMoveZ = false;
+    }
+
+    // Apply movement only on allowed axes
+    if (allowedMoveX) {
+      camera.position.x += moveDirection.x;
+    }
+    if (allowedMoveZ) {
+      camera.position.z += moveDirection.z;
+    }
 
     // Keep camera height constant
-    cameraRef.current.position.y = cameraHeight;
+    camera.position.y = cameraHeight;
 
     // Update player state position (for potential future use like collision)
-    player.position.copy(cameraRef.current.position);
+    player.position.copy(camera.position);
   }, [cameraRef, cameraHeight]);
 
   // Effect to attach and detach event listeners
