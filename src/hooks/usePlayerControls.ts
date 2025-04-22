@@ -1,5 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import * as THREE from "three";
+
+// Define jump strength and gravity constants
+const JUMP_STRENGTH = 0.18;
+const GRAVITY = 0.007;
 
 export interface PlayerState {
   position: THREE.Vector3;
@@ -9,7 +13,7 @@ export interface PlayerState {
   moveBackward: boolean;
   moveLeft: boolean;
   moveRight: boolean;
-  canJump: boolean; // Keep for potential future use
+  isOnGround: boolean; // Renamed from canJump for clarity
 }
 
 interface UsePlayerControlsProps {
@@ -33,26 +37,33 @@ export const usePlayerControls = ({
     moveBackward: false,
     moveLeft: false,
     moveRight: false,
-    canJump: false,
+    isOnGround: false, // Start assuming not on ground initially
   });
 
   // Event Handlers memoized with useCallback
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    const player = playerStateRef.current;
     switch (event.code) {
       case "KeyW":
-        playerStateRef.current.moveForward = true;
+        player.moveForward = true;
         break;
       case "KeyS":
-        playerStateRef.current.moveBackward = true;
+        player.moveBackward = true;
         break;
       case "KeyA":
-        playerStateRef.current.moveLeft = true;
+        player.moveLeft = true;
         break;
       case "KeyD":
-        playerStateRef.current.moveRight = true;
+        player.moveRight = true;
+        break;
+      case "Space": // Handle jump
+        if (player.isOnGround) {
+          player.velocity.y = JUMP_STRENGTH;
+          player.isOnGround = false;
+        }
         break;
     }
-  }, []);
+  }, []); // No dependencies needed here as it only modifies the ref
 
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
     switch (event.code) {
@@ -102,56 +113,56 @@ export const usePlayerControls = ({
     const velocity = player.velocity; // Use velocity from state
     const direction = new THREE.Vector3();
 
-    // Corrected: W -> -Z (local), S -> +Z (local)
+    // Horizontal movement direction
     direction.z = Number(player.moveBackward) - Number(player.moveForward);
-    // Corrected: A -> -X (local), D -> +X (local)
     direction.x = Number(player.moveRight) - Number(player.moveLeft);
-    direction.normalize(); // Ensure consistent speed in all directions
+    direction.normalize();
 
-    // Simplified velocity calculation (adjust speed factor as needed)
     const moveSpeed = 0.1;
-    velocity.z = direction.z * moveSpeed;
-    velocity.x = direction.x * moveSpeed;
+    const horizontalVelocity = new THREE.Vector3(
+      direction.x * moveSpeed,
+      0,
+      direction.z * moveSpeed
+    );
 
-    // Apply rotation to movement direction
+    // Apply rotation to horizontal movement direction
     const euler = new THREE.Euler(0, player.rotation.y, 0, "YXZ");
-    const moveDirection = new THREE.Vector3(velocity.x, 0, velocity.z);
-    moveDirection.applyEuler(euler);
+    const moveDirection = horizontalVelocity.applyEuler(euler);
 
-    // Calculate potential next position
-    const nextPosition = camera.position.clone().add(moveDirection);
+    // --- Vertical Movement (Gravity and Jumping) ---
+    velocity.y -= GRAVITY; // Apply gravity
+    camera.position.y += velocity.y; // Apply vertical velocity
 
-    // Define boundaries (with buffer)
-    const bounds = {
-      xMin: -9.5,
-      xMax: 9.5,
-      zMin: -14.5,
-      zMax: 14.5,
-    };
-
-    // Check and apply boundaries
-    let allowedMoveX = true;
-    let allowedMoveZ = true;
-
-    if (nextPosition.x < bounds.xMin || nextPosition.x > bounds.xMax) {
-      allowedMoveX = false;
-    }
-    if (nextPosition.z < bounds.zMin || nextPosition.z > bounds.zMax) {
-      allowedMoveZ = false;
+    // Ground check
+    if (camera.position.y <= cameraHeight) {
+      camera.position.y = cameraHeight;
+      velocity.y = 0; // Stop vertical movement
+      player.isOnGround = true; // Player is on the ground
+    } else {
+      player.isOnGround = false; // Player is in the air
     }
 
-    // Apply movement only on allowed axes
-    if (allowedMoveX) {
-      camera.position.x += moveDirection.x;
-    }
-    if (allowedMoveZ) {
-      camera.position.z += moveDirection.z;
-    }
+    // --- Horizontal Movement (with Boundaries) ---
+    const nextPositionX = camera.position.x + moveDirection.x;
+    const nextPositionZ = camera.position.z + moveDirection.z;
 
-    // Keep camera height constant
-    camera.position.y = cameraHeight;
+    const bounds = { xMin: -9.5, xMax: 9.5, zMin: -14.5, zMax: 14.5 };
 
-    // Update player state position (for potential future use like collision)
+    // Apply horizontal movement only if within bounds
+    if (nextPositionX >= bounds.xMin && nextPositionX <= bounds.xMax) {
+      camera.position.x = nextPositionX;
+    }
+    if (nextPositionZ >= bounds.zMin && nextPositionZ <= bounds.zMax) {
+      camera.position.z = nextPositionZ;
+    }
+    // Note: This simple boundary check prevents sliding.
+    // To re-enable sliding, separate the checks like before:
+    // let allowedMoveX = nextPositionX >= bounds.xMin && nextPositionX <= bounds.xMax;
+    // let allowedMoveZ = nextPositionZ >= bounds.zMin && nextPositionZ <= bounds.zMax;
+    // if (allowedMoveX) { camera.position.x += moveDirection.x; }
+    // if (allowedMoveZ) { camera.position.z += moveDirection.z; }
+
+    // Update player state position
     player.position.copy(camera.position);
   }, [cameraRef, cameraHeight]);
 
