@@ -57,10 +57,12 @@ npm run build
 
 ## Project Structure
 
-- `src/components/GreekVases.tsx`: Main 3D scene and interaction logic.
-- `src/App.tsx`: Main application component.
-- `src/App.css`: Styles for UI elements (crosshair, info text).
-- `public/`: Static assets (if any).
+- `src/components/GreekVases.tsx`: Main React component integrating the 3D scene and UI.
+- `src/hooks/`: Contains custom React hooks encapsulating specific logic domains (scene setup, player controls, vase management, shard physics).
+- `src/features/greek-vases/threeUtils.ts`: Utility functions specific to Three.js object creation for this feature.
+- `src/App.tsx`: Root application component.
+- `src/App.css`, `src/index.css`: Global styles and UI element styling.
+- `public/`: Static assets.
 
 ## License
 
