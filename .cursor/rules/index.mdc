@@ -1,0 +1,27 @@
+# Project Rules Index
+
+This document outlines the structure and hierarchy of rules for the Greek Vases project.
+
+## Rule Hierarchy
+
+1.  **Global STRM Rules:** Apply first (defined externally).
+2.  **Project Rules (`project.mdc`):** Define project-wide conventions and override global rules where necessary.
+3.  **Component/Module Rules (e.g., `components/GreekVases.mdc`):** Specific rules for particular parts of the codebase (to be added as needed).
+
+## Documentation Structure
+
+- Follow standard Markdown conventions for documentation files (.md, .mdc).
+- Code comments should be in English.
+- UI text language depends on project requirements (currently Polish for instructions, English for general UI elements like counters).
+
+## Key Files
+
+- `project.mdc`: General project rules and technology stack.
+- `README.md`: High-level project overview, setup, and controls.
+- `.todo/`: Task management files (if used).
+
+## General Guidelines
+
+- Maintain consistency with existing code patterns.
+- Prioritize clarity and maintainability.
+- Adhere to the specified language rules (Polish for chat, English for code/docs). 

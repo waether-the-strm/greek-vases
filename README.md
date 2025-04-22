@@ -4,10 +4,12 @@ An interactive 3D gallery of Greek vases built with React, Three.js, and Vite.
 
 ## Features
 
-- 3D environment with realistic lighting and shadows
-- Multiple types of Greek vases with different designs
-- Interactive navigation through the gallery
-- Physics simulation for breaking vases
+- Interactive 3D environment with lighting and shadows
+- Several types of procedurally generated Greek vases on pedestals
+- First-Person Shooter (FPS) style navigation (WASD + Mouse look)
+- Ability to break vases by clicking on them
+- Physics simulation for falling shards
+- Pointer lock for immersive control
 
 ## Technologies Used
 
@@ -20,7 +22,7 @@ An interactive 3D gallery of Greek vases built with React, Three.js, and Vite.
 
 ### Prerequisites
 
-- Node.js 14+ and npm
+- Node.js (LTS version recommended) and npm
 
 ### Installation
 
@@ -37,6 +39,8 @@ npm install
 npm run dev
 ```
 
+This will open the application in your default browser.
+
 4. Build for production:
 
 ```bash
@@ -45,15 +49,18 @@ npm run build
 
 ## Controls
 
-- Use WASD to move around the gallery
-- Click to interact with vases
-- Press ESC to exit pointer lock mode
+- **Click** into the scene to enable pointer lock and controls.
+- **WASD Keys:** Move forward, left, backward, right.
+- **Mouse:** Look around.
+- **Click (while locked):** Break the vase you are looking at.
+- **ESC Key:** Release pointer lock and show instructions/cursor.
 
 ## Project Structure
 
-- `src/components/GreekVases.tsx` - Main 3D gallery component
-- `src/App.tsx` - Main application component
-- `public/` - Static assets
+- `src/components/GreekVases.tsx`: Main 3D scene and interaction logic.
+- `src/App.tsx`: Main application component.
+- `src/App.css`: Styles for UI elements (crosshair, info text).
+- `public/`: Static assets (if any).
 
 ## License
 

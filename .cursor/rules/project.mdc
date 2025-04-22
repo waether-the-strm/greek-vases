@@ -1,0 +1,43 @@
+# Project-Specific Rules: Greek Vases
+
+These rules apply to the entire Greek Vases project and supplement/override global rules.
+
+## Technology Stack
+
+- **Framework:** React
+- **Language:** TypeScript
+- **3D Library:** Three.js
+- **Build Tool:** Vite
+- **Styling:** CSS Modules (preferred, though plain CSS is currently used in `App.css` and `index.css`)
+
+## Coding Conventions
+
+- **Component Naming:** PascalCase (e.g., `GreekVases`).
+- **Function Naming:** camelCase (e.g., `createPedestal`).
+- **Variable Naming:** camelCase.
+- **Types/Interfaces:** PascalCase (e.g., `PlayerState`).
+- **File Naming:** PascalCase for components (`.tsx`), camelCase or kebab-case for other files (`.ts`, `.css`).
+- **Imports:** Organize imports (e.g., React, external libraries, internal components, styles).
+
+## Three.js Specifics
+
+- Use `const` for objects that are not reassigned (scene, camera, lights, materials, geometries).
+- Group related objects using `THREE.Group` where appropriate (e.g., pedestal with vase).
+- Store dynamic data or state related to 3D objects in `userData`.
+- Optimize performance where possible (e.g., reusing materials/geometries if applicable, though procedural generation might limit this).
+- Ensure proper cleanup in `useEffect` return function (remove event listeners, dispose of geometries/materials/textures if necessary, remove objects from scene).
+
+## UI Text
+
+- **Instructions/Help Text:** Polish (as seen in current implementation).
+- **UI Elements (Counters, Labels etc.):** English (e.g., "Broken Vases: {count}").
+
+## State Management
+
+- Use React hooks (`useState`, `useRef`, `useEffect`) for component state and lifecycle management.
+- Keep state localized where possible.
+
+## Linting & Formatting
+
+- Follow ESLint rules defined in `eslint.config.js`.
+- Use a code formatter (like Prettier, if configured) for consistency. 
