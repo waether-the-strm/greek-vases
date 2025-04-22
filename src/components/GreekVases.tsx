@@ -1,6 +1,5 @@
-import React, { useRef, useEffect, useState, useCallback } from "react";
-import * as THREE from "three";
-import { PlayerState, usePlayerControls } from "../hooks/usePlayerControls";
+import { useRef, useEffect, useState, useCallback } from "react";
+import { usePlayerControls } from "../hooks/usePlayerControls";
 import { useVaseManager } from "../hooks/useVaseManager";
 import { useSceneSetup } from "../hooks/useSceneSetup";
 import { useShardManager } from "../hooks/useShardManager";
