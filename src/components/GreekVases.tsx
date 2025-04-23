@@ -179,7 +179,7 @@ export const GreekVases = () => {
   }, []);
 
   // --- Leva Debug Panel Controls ---
-  const [_, get] = useControls(
+  useControls(
     () => ({
       Renderer: folder({
         "Tone Mapping": {
@@ -353,7 +353,7 @@ export const GreekVases = () => {
               windowPane.material.opacity = v;
             }
           },
-          render: (get) => !!windowPane,
+          render: (_get) => !!windowPane,
         },
         Blending: {
           value: initialSettings["Window Blending"],
@@ -369,7 +369,7 @@ export const GreekVases = () => {
               windowPane.material.needsUpdate = true; // Important for blending change
             }
           },
-          render: (get) => !!windowPane,
+          render: (_get) => !!windowPane,
         },
         Color: {
           value: initialSettings["Window Color"],
@@ -381,7 +381,7 @@ export const GreekVases = () => {
               windowPane.material.color.set(v);
             }
           },
-          render: (get) => !!windowPane,
+          render: (_get) => !!windowPane,
         },
         "Render Order": {
           value: initialSettings["Window Render Order"],
@@ -391,7 +391,7 @@ export const GreekVases = () => {
           onChange: (v) => {
             if (windowPane) windowPane.renderOrder = v;
           },
-          render: (get) => !!windowPane,
+          render: (_get) => !!windowPane,
         },
         "Rect Light Intensity": {
           value: initialSettings["Rect Light Intensity"],
@@ -402,14 +402,14 @@ export const GreekVases = () => {
             if (rectAreaLightRef.current)
               rectAreaLightRef.current.intensity = v;
           },
-          render: (get) => !!rectAreaLightRef.current,
+          render: (_get) => !!rectAreaLightRef.current,
         },
         "Rect Light Color": {
           value: initialSettings["Rect Light Color"],
           onChange: (v) => {
             if (rectAreaLightRef.current) rectAreaLightRef.current.color.set(v);
           },
-          render: (get) => !!rectAreaLightRef.current,
+          render: (_get) => !!rectAreaLightRef.current,
         },
         "Rect Light Width": {
           value: initialSettings["Rect Light Width"],
@@ -419,7 +419,7 @@ export const GreekVases = () => {
           onChange: (v) => {
             if (rectAreaLightRef.current) rectAreaLightRef.current.width = v;
           },
-          render: (get) => !!rectAreaLightRef.current,
+          render: (_get) => !!rectAreaLightRef.current,
         },
         "Rect Light Height": {
           value: initialSettings["Rect Light Height"],
@@ -429,7 +429,7 @@ export const GreekVases = () => {
           onChange: (v) => {
             if (rectAreaLightRef.current) rectAreaLightRef.current.height = v;
           },
-          render: (get) => !!rectAreaLightRef.current,
+          render: (_get) => !!rectAreaLightRef.current,
         },
       }),
       "Parallax BG": folder({
@@ -442,7 +442,7 @@ export const GreekVases = () => {
               backgroundPlane.material.color.set(v);
             }
           },
-          render: (get) =>
+          render: (_get) =>
             !!backgroundPlane &&
             backgroundPlane.material instanceof THREE.MeshStandardMaterial,
         },
@@ -455,7 +455,7 @@ export const GreekVases = () => {
               backgroundPlane.material.emissive.set(v);
             }
           },
-          render: (get) =>
+          render: (_get) =>
             !!backgroundPlane &&
             backgroundPlane.material instanceof THREE.MeshStandardMaterial,
         },
@@ -471,7 +471,7 @@ export const GreekVases = () => {
               backgroundPlane.material.emissiveIntensity = v;
             }
           },
-          render: (get) =>
+          render: (_get) =>
             !!backgroundPlane &&
             backgroundPlane.material instanceof THREE.MeshStandardMaterial,
         },
@@ -490,7 +490,7 @@ export const GreekVases = () => {
               backgroundPlane.material.needsUpdate = true;
             }
           },
-          render: (get) => !!backgroundPlane,
+          render: (_get) => !!backgroundPlane,
         },
         "Render Order": {
           value: initialSettings["Parallax BG Render Order"],
@@ -500,7 +500,7 @@ export const GreekVases = () => {
           onChange: (v) => {
             if (backgroundPlane) backgroundPlane.renderOrder = v;
           },
-          render: (get) => !!backgroundPlane,
+          render: (_get) => !!backgroundPlane,
         },
       }),
       "Post-Processing": folder({
