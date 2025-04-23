@@ -11,28 +11,47 @@ const GreekVases = () => {
   const [cameraHeight] = useState(2.5);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [isTouchControlActive, setIsTouchControlActive] = useState(false);
-
-  // Setup scene, camera, renderer using the hook
-  const { sceneRef, cameraRef, rendererRef } = useSceneSetup({
-    mountRef,
-    cameraHeight,
+  const [isLightMode, setIsLightMode] = useState(true); // true = jasny tryb, false = ciemny tryb
+  const textureRefs = useRef<{
+    windowTexture: THREE.Texture | null;
+    backgroundTexture: THREE.Texture | null;
+  }>({
+    windowTexture: null,
+    backgroundTexture: null,
   });
 
-  // Load the gallery model and other elements using the updated hook
+  // Setup scene, camera, renderer, composer using the hook
+  const { sceneRef, cameraRef, rendererRef, composerRef, setOutlineObjects } =
+    useSceneSetup({
+      mountRef,
+      cameraHeight: 3,
+      isLightMode,
+    });
+
+  // Load gallery model and related objects
   const { windowPane, backgroundPlane, directionalLight } = useGalleryLoader({
     sceneRef,
+    onLoad: (model) => {
+      console.log("Gallery model loaded:", model);
+    },
+    isLightMode,
+    textureRefs,
   });
 
   // Store initial background position for parallax
   const initialBackgroundPosition = useRef<THREE.Vector3 | null>(null);
 
-  // Initialize Vase Manager FIRST to get handleVaseClick
-  const { brokenVasesCount, handleVaseClick, setOnVaseBrokenCallback } =
-    useVaseManager({
-      sceneRef,
-      cameraRef,
-      isPointerLocked,
-    });
+  // Initialize Vase Manager FIRST to get handleVaseClick and vasesRef
+  const {
+    brokenVasesCount,
+    handleVaseClick,
+    setOnVaseBrokenCallback,
+    vasesRef,
+  } = useVaseManager({
+    sceneRef,
+    cameraRef,
+    isPointerLocked,
+  });
 
   // Initialize Player Controls SECOND, passing handleVaseClick
   const { updatePlayerPosition, joystickCenter, joystickRadius } =
@@ -105,9 +124,9 @@ const GreekVases = () => {
   useEffect(() => {
     if (!sceneRef.current || !rendererRef.current || !cameraRef.current) return;
 
-    const scene = sceneRef.current;
-    const renderer = rendererRef.current;
-    const camera = cameraRef.current;
+    const currentScene = sceneRef.current;
+    const currentRenderer = rendererRef.current;
+    const currentCamera = cameraRef.current;
 
     // Click handler for pointer lock (DESKTOP ONLY)
     const combinedMouseClickHandler = () => {
@@ -155,7 +174,37 @@ const GreekVases = () => {
       }
 
       updateShards();
-      renderer.render(scene, camera);
+
+      // --- Vase Levitation ---
+      const time = performance.now() * 0.001; // Time in seconds
+      const levitationSpeed = 1.5;
+      const levitationAmplitude = 0.05;
+      const levitationBaseOffset = 0.15; // Add a base offset to lift vases
+
+      if (vasesRef.current) {
+        vasesRef.current.forEach((vase) => {
+          if (
+            vase.userData.initialY !== undefined &&
+            vase.userData.phaseOffset !== undefined
+          ) {
+            const initialY = vase.userData.initialY;
+            const phaseOffset = vase.userData.phaseOffset;
+            const offsetY =
+              Math.sin(time * levitationSpeed + phaseOffset) *
+              levitationAmplitude;
+            // Apply base offset plus oscillation
+            vase.position.y = initialY + levitationBaseOffset + offsetY;
+          }
+        });
+      }
+      // --- End Vase Levitation ---
+
+      // Use composer for rendering if available, otherwise fallback to renderer
+      if (composerRef.current) {
+        composerRef.current.render();
+      } else if (currentRenderer && currentScene && currentCamera) {
+        currentRenderer.render(currentScene, currentCamera);
+      }
     }
     animate();
 
@@ -185,14 +234,26 @@ const GreekVases = () => {
     handlePointerLockChange,
     handlePointerLockError,
     updatePlayerPosition,
-    handleVaseClick, // Ensure handleVaseClick is listed explicitly
+    handleVaseClick,
     sceneRef,
     cameraRef,
     rendererRef,
     updateShards,
     cleanupShards,
     backgroundPlane,
+    vasesRef,
+    setOutlineObjects,
   ]);
+
+  // Effect to set outline objects when vases are ready
+  useEffect(() => {
+    // Check if vasesRef has been populated by useVaseManager
+    if (vasesRef.current && vasesRef.current.length > 0) {
+      setOutlineObjects(vasesRef.current);
+    }
+    // Optionally return a cleanup function to clear outlines if vases are removed
+    // return () => setOutlineObjects([]);
+  }, [vasesRef.current, setOutlineObjects]); // Run when vasesRef or setter changes
 
   // Connect Vase Manager break event to Shard Manager creation
   useEffect(() => {
@@ -200,6 +261,20 @@ const GreekVases = () => {
     // Cleanup callback connection if component unmounts or deps change
     return () => setOnVaseBrokenCallback(() => {});
   }, [setOnVaseBrokenCallback, createShards]);
+
+  // Cleanup textures when component unmounts
+  useEffect(() => {
+    return () => {
+      if (textureRefs.current.windowTexture) {
+        textureRefs.current.windowTexture.dispose();
+        textureRefs.current.windowTexture = null;
+      }
+      if (textureRefs.current.backgroundTexture) {
+        textureRefs.current.backgroundTexture.dispose();
+        textureRefs.current.backgroundTexture = null;
+      }
+    };
+  }, []);
 
   return (
     <div
@@ -227,6 +302,24 @@ const GreekVases = () => {
       >
         Broken Vases: {brokenVasesCount}
       </div>
+      <button
+        onClick={() => setIsLightMode(!isLightMode)}
+        style={{
+          position: "absolute",
+          top: "20px",
+          right: "20px",
+          padding: "10px",
+          background: "rgba(0,0,0,0.5)",
+          border: "1px solid rgba(255,255,255,0.3)",
+          borderRadius: "5px",
+          color: "#fff",
+          cursor: "pointer",
+          transition: "background-color 0.3s",
+        }}
+        data-testid="light-mode-toggle"
+      >
+        {isLightMode ? "🌞" : "🌙"}
+      </button>
       <div className="controls-info" data-testid="controls-info">
         Użyj WASD, aby się poruszać. Kliknij, aby rozbić wazę.
       </div>
