@@ -115,7 +115,7 @@ export const useGalleryLoader = ({
           side: THREE.DoubleSide,
           color: 0xffffff,
           blending: THREE.AdditiveBlending,
-          depthWrite: false,
+          depthWrite: true,
         });
         const createdWindowPane = new THREE.Mesh(
           windowGeometry,
@@ -153,11 +153,12 @@ export const useGalleryLoader = ({
           undefined,
           (err) => console.error("Error loading background texture:", err)
         );
-        const backgroundMaterial = new THREE.MeshBasicMaterial({
+        const backgroundMaterial = new THREE.MeshStandardMaterial({
           map: backgroundTexture,
           side: THREE.DoubleSide,
-          opacity: 1.0,
-          transparent: true,
+          color: 0xffffff,
+          roughness: 1.0,
+          metalness: 0.0,
         });
         const createdBackgroundPlane = new THREE.Mesh(
           backgroundGeometry,

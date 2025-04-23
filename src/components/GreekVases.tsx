@@ -12,6 +12,10 @@ import {
   ReinhardToneMapping,
   CineonToneMapping,
   NoToneMapping,
+  NormalBlending,
+  AdditiveBlending,
+  SubtractiveBlending,
+  MultiplyBlending,
 } from "three";
 import yaml from "js-yaml";
 import initialSettingsFromJson from "../config/sceneSettings.json";
@@ -103,8 +107,31 @@ export const GreekVases = () => {
     sceneRef,
   });
 
-  // Use imported settings directly (cast type if needed, though direct import should work)
-  const initialSettings = initialSettingsFromJson as { [key: string]: any };
+  // Use imported settings, provide defaults for new window/background controls
+  const initialSettings = {
+    ...initialSettingsFromJson,
+    // Window Pane Defaults
+    "Window Opacity": 0.8, // Adjusted default
+    "Window Blending": AdditiveBlending,
+    "Window Color": "#ffffff",
+    "Window Render Order": 0,
+    // Background Plane Defaults
+    "Background Color": "#ffffff",
+    "Background Emissive": "#000000",
+    "Background Emissive Intensity": 0,
+    "Background Render Order": 0,
+    // Rect Light Defaults (already exist)
+    "Rect Light Intensity": 5.0, // Default value
+    "Rect Light Color": "#ffffff", // Default value
+    "Rect Light Width": 35 * 0.95, // Default from creation logic
+    "Rect Light Height": 12 * 0.95, // Default from creation logic
+    // Parallax Background Defaults
+    "Parallax BG Color": "#ffffff",
+    "Parallax BG Emissive": "#000000",
+    "Parallax BG Emissive Intensity": 0,
+    "Parallax BG Opacity": 1.0,
+    "Parallax BG Render Order": -1, // Default behind window
+  } as { [key: string]: any };
 
   // Extract the export logic handler
   const handleExportClick = useCallback(() => {
@@ -246,29 +273,15 @@ export const GreekVases = () => {
           max: 2,
           step: 0.01,
           onChange: (v) => {
-            console.log(`[Leva Change] Main Dir Intensity: ${v}`);
             if (mainDirectionalLightRef.current)
               mainDirectionalLightRef.current.intensity = v;
-            if (rectAreaLightRef.current) {
-              rectAreaLightRef.current.intensity = v * 15;
-              console.log(
-                `[Leva Change] RectAreaLight Intensity set to: ${rectAreaLightRef.current.intensity}`
-              );
-            }
           },
         },
         "Main Dir Color": {
           value: initialSettings["Main Dir Color"],
           onChange: (v) => {
-            console.log(`[Leva Change] Main Dir Color: ${v}`);
             if (mainDirectionalLightRef.current)
               mainDirectionalLightRef.current.color.set(v);
-            if (rectAreaLightRef.current) {
-              rectAreaLightRef.current.color.set(v);
-              console.log(
-                `[Leva Change] RectAreaLight Color set to: #${rectAreaLightRef.current.color.getHexString()}`
-              );
-            }
           },
         },
         "Main Dir Shadow Bias": {
@@ -329,6 +342,167 @@ export const GreekVases = () => {
           },
         },
       }),
+      Window: folder({
+        Opacity: {
+          value: initialSettings["Window Opacity"],
+          min: 0,
+          max: 1,
+          step: 0.01,
+          onChange: (v) => {
+            if (windowPane?.material && !Array.isArray(windowPane.material)) {
+              windowPane.material.opacity = v;
+            }
+          },
+          render: (get) => !!windowPane,
+        },
+        Blending: {
+          value: initialSettings["Window Blending"],
+          options: {
+            Normal: NormalBlending,
+            Additive: AdditiveBlending,
+            Subtractive: SubtractiveBlending,
+            Multiply: MultiplyBlending,
+          },
+          onChange: (v) => {
+            if (windowPane?.material && !Array.isArray(windowPane.material)) {
+              windowPane.material.blending = v;
+              windowPane.material.needsUpdate = true; // Important for blending change
+            }
+          },
+          render: (get) => !!windowPane,
+        },
+        Color: {
+          value: initialSettings["Window Color"],
+          onChange: (v) => {
+            if (
+              windowPane?.material &&
+              windowPane.material instanceof THREE.MeshBasicMaterial
+            ) {
+              windowPane.material.color.set(v);
+            }
+          },
+          render: (get) => !!windowPane,
+        },
+        "Render Order": {
+          value: initialSettings["Window Render Order"],
+          min: -10,
+          max: 10,
+          step: 1,
+          onChange: (v) => {
+            if (windowPane) windowPane.renderOrder = v;
+          },
+          render: (get) => !!windowPane,
+        },
+        "Rect Light Intensity": {
+          value: initialSettings["Rect Light Intensity"],
+          min: 0,
+          max: 50,
+          step: 0.1, // Increased max range
+          onChange: (v) => {
+            if (rectAreaLightRef.current)
+              rectAreaLightRef.current.intensity = v;
+          },
+          render: (get) => !!rectAreaLightRef.current,
+        },
+        "Rect Light Color": {
+          value: initialSettings["Rect Light Color"],
+          onChange: (v) => {
+            if (rectAreaLightRef.current) rectAreaLightRef.current.color.set(v);
+          },
+          render: (get) => !!rectAreaLightRef.current,
+        },
+        "Rect Light Width": {
+          value: initialSettings["Rect Light Width"],
+          min: 1,
+          max: 50,
+          step: 0.1,
+          onChange: (v) => {
+            if (rectAreaLightRef.current) rectAreaLightRef.current.width = v;
+          },
+          render: (get) => !!rectAreaLightRef.current,
+        },
+        "Rect Light Height": {
+          value: initialSettings["Rect Light Height"],
+          min: 1,
+          max: 50,
+          step: 0.1,
+          onChange: (v) => {
+            if (rectAreaLightRef.current) rectAreaLightRef.current.height = v;
+          },
+          render: (get) => !!rectAreaLightRef.current,
+        },
+      }),
+      "Parallax BG": folder({
+        Color: {
+          value: initialSettings["Parallax BG Color"],
+          onChange: (v) => {
+            if (
+              backgroundPlane?.material instanceof THREE.MeshStandardMaterial
+            ) {
+              backgroundPlane.material.color.set(v);
+            }
+          },
+          render: (get) =>
+            !!backgroundPlane &&
+            backgroundPlane.material instanceof THREE.MeshStandardMaterial,
+        },
+        Emissive: {
+          value: initialSettings["Parallax BG Emissive"],
+          onChange: (v) => {
+            if (
+              backgroundPlane?.material instanceof THREE.MeshStandardMaterial
+            ) {
+              backgroundPlane.material.emissive.set(v);
+            }
+          },
+          render: (get) =>
+            !!backgroundPlane &&
+            backgroundPlane.material instanceof THREE.MeshStandardMaterial,
+        },
+        "Emissive Intensity": {
+          value: initialSettings["Parallax BG Emissive Intensity"],
+          min: 0,
+          max: 5,
+          step: 0.01,
+          onChange: (v) => {
+            if (
+              backgroundPlane?.material instanceof THREE.MeshStandardMaterial
+            ) {
+              backgroundPlane.material.emissiveIntensity = v;
+            }
+          },
+          render: (get) =>
+            !!backgroundPlane &&
+            backgroundPlane.material instanceof THREE.MeshStandardMaterial,
+        },
+        Opacity: {
+          value: initialSettings["Parallax BG Opacity"],
+          min: 0,
+          max: 1,
+          step: 0.01,
+          onChange: (v) => {
+            if (
+              backgroundPlane?.material &&
+              !Array.isArray(backgroundPlane.material)
+            ) {
+              backgroundPlane.material.transparent = v < 1.0;
+              backgroundPlane.material.opacity = v;
+              backgroundPlane.material.needsUpdate = true;
+            }
+          },
+          render: (get) => !!backgroundPlane,
+        },
+        "Render Order": {
+          value: initialSettings["Parallax BG Render Order"],
+          min: -10,
+          max: 10,
+          step: 1,
+          onChange: (v) => {
+            if (backgroundPlane) backgroundPlane.renderOrder = v;
+          },
+          render: (get) => !!backgroundPlane,
+        },
+      }),
       "Post-Processing": folder({
         "Outline Strength": {
           value: initialSettings["Outline Strength"],
@@ -379,9 +553,7 @@ export const GreekVases = () => {
           },
         },
       }),
-      " ": folder({
-        "Copy Settings (YAML)": button(handleExportClick),
-      }),
+      "Copy Settings (YAML)": button(handleExportClick),
     }),
     // Dependencies
     [
@@ -394,6 +566,7 @@ export const GreekVases = () => {
       outlinePassRef,
       fxaaPassRef,
       rectAreaLightRef,
+      backgroundPlane,
     ]
   );
   // --- End Leva Controls ---
@@ -408,7 +581,9 @@ export const GreekVases = () => {
       mainDirectionalLightRef.current &&
       outlinePassRef.current &&
       fxaaPassRef.current &&
-      rectAreaLightRef.current
+      rectAreaLightRef.current &&
+      windowPane &&
+      backgroundPlane
     ) {
       console.log(
         "Applying initialSettings from JSON directly to Three.js objects..."
@@ -452,6 +627,39 @@ export const GreekVases = () => {
           initialSettings["Gallery Dir Shadow Radius"];
       }
 
+      outlinePass.edgeStrength = initialSettings["Outline Strength"];
+      outlinePass.edgeThickness = initialSettings["Outline Thickness"];
+      outlinePass.edgeGlow = initialSettings["Outline Glow"];
+      outlinePass.visibleEdgeColor.set(
+        initialSettings["Outline Visible Color"]
+      );
+      outlinePass.hiddenEdgeColor.set(initialSettings["Outline Hidden Color"]);
+      fxaaPass.enabled = initialSettings["Enable FXAA"];
+
+      // Apply initial Window settings
+      if (
+        windowPane?.material &&
+        windowPane.material instanceof THREE.MeshBasicMaterial
+      ) {
+        windowPane.material.opacity = initialSettings["Window Opacity"];
+        windowPane.material.blending = initialSettings["Window Blending"];
+        windowPane.material.needsUpdate = true;
+        windowPane.material.color.set(initialSettings["Window Color"]);
+        windowPane.renderOrder = initialSettings["Window Render Order"];
+      }
+
+      // Apply initial Background settings
+      if (backgroundPlane?.material instanceof THREE.MeshStandardMaterial) {
+        backgroundPlane.material.color.set(initialSettings["Background Color"]);
+        backgroundPlane.material.emissive.set(
+          initialSettings["Background Emissive"]
+        );
+        backgroundPlane.material.emissiveIntensity =
+          initialSettings["Background Emissive Intensity"];
+        backgroundPlane.renderOrder =
+          initialSettings["Background Render Order"];
+      }
+
       if (rectAreaLight && mainDirLight) {
         console.log(
           "Applying initial settings to RectAreaLight:",
@@ -462,14 +670,33 @@ export const GreekVases = () => {
         rectAreaLight.color.set(initialSettings["Main Dir Color"]);
       }
 
-      outlinePass.edgeStrength = initialSettings["Outline Strength"];
-      outlinePass.edgeThickness = initialSettings["Outline Thickness"];
-      outlinePass.edgeGlow = initialSettings["Outline Glow"];
-      outlinePass.visibleEdgeColor.set(
-        initialSettings["Outline Visible Color"]
-      );
-      outlinePass.hiddenEdgeColor.set(initialSettings["Outline Hidden Color"]);
-      fxaaPass.enabled = initialSettings["Enable FXAA"];
+      // Apply initial Parallax Background settings
+      if (backgroundPlane?.material instanceof THREE.MeshStandardMaterial) {
+        backgroundPlane.material.color.set(
+          initialSettings["Parallax BG Color"]
+        );
+        backgroundPlane.material.emissive.set(
+          initialSettings["Parallax BG Emissive"]
+        );
+        backgroundPlane.material.emissiveIntensity =
+          initialSettings["Parallax BG Emissive Intensity"];
+      }
+      // Apply opacity and renderOrder regardless of material type initially?
+      if (
+        backgroundPlane?.material &&
+        !Array.isArray(backgroundPlane.material)
+      ) {
+        backgroundPlane.material.transparent =
+          initialSettings["Parallax BG Opacity"] < 1.0;
+        backgroundPlane.material.opacity =
+          initialSettings["Parallax BG Opacity"];
+        backgroundPlane.material.needsUpdate = true;
+      }
+      if (backgroundPlane) {
+        // Apply render order separately
+        backgroundPlane.renderOrder =
+          initialSettings["Parallax BG Render Order"];
+      }
 
       console.log("Initial settings applied directly to Three.js objects.");
     }
@@ -483,6 +710,8 @@ export const GreekVases = () => {
     outlinePassRef.current,
     fxaaPassRef.current,
     rectAreaLightRef.current,
+    windowPane,
+    backgroundPlane,
   ]);
 
   // Add gallery objects to the scene imperatively when they are loaded
