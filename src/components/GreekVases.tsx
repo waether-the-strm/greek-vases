@@ -103,6 +103,33 @@ export const GreekVases = () => {
     sceneRef,
   });
 
+  // Define initial settings based on previous YAML export
+  const initialSettings = {
+    "Tone Mapping": 4, // Assuming ACESFilmic was index 4 or corresponds to THREE constant
+    Exposure: 0.17,
+    "Env Intensity": 0.05,
+    Background: "#125da3",
+    "Ambient Intensity": 0.8899999999999999,
+    "Ambient Color": "#265cff",
+    "Hemi Intensity": 1.4400000000000002,
+    "Hemi Sky Color": "#902c2c",
+    "Hemi Ground Color": "#803232",
+    "Main Dir Intensity": 0.08000000000000002,
+    "Main Dir Color": "#6750b4",
+    "Main Dir Shadow Bias": -0.0026000000000000003,
+    "Main Dir Shadow Radius": 7.3,
+    "Gallery Dir Intensity": 1.11,
+    "Gallery Dir Color": "#e8810c",
+    "Gallery Dir Shadow Bias": -0.0031000000000000003,
+    "Gallery Dir Shadow Radius": 0.8999999999999986,
+    "Outline Strength": 7.8,
+    "Outline Thickness": 0.7,
+    "Outline Glow": 0.92,
+    "Outline Visible Color": "#feff8c",
+    "Outline Hidden Color": "#ff8d3d",
+    "Enable FXAA": true,
+  };
+
   // Extract the export logic handler (can stay outside)
   const handleExportClick = useCallback(() => {
     console.log("Exporting settings using levaStore.getData()...");
@@ -149,13 +176,12 @@ export const GreekVases = () => {
   }, []); // No dependencies needed as it uses levaStore directly
 
   // --- Leva Debug Panel Controls ---
-  // Revert to single useControls call, define schema inline
-  // Get the get function
-  const [_, get] = useControls(
+  // Get the set function from useControls
+  const [_, get, set] = useControls(
     () => ({
       Renderer: folder({
         "Tone Mapping": {
-          value: ACESFilmicToneMapping,
+          value: initialSettings["Tone Mapping"], // Use value from initialSettings
           options: {
             None: NoToneMapping,
             Linear: LinearToneMapping,
@@ -168,7 +194,7 @@ export const GreekVases = () => {
           },
         },
         Exposure: {
-          value: 0.0,
+          value: initialSettings["Exposure"], // Use value from initialSettings
           min: 0,
           max: 2,
           step: 0.01,
@@ -178,7 +204,7 @@ export const GreekVases = () => {
           },
         },
         "Env Intensity": {
-          value: 0.16,
+          value: initialSettings["Env Intensity"], // Use value from initialSettings
           min: 0,
           max: 2,
           step: 0.01,
@@ -187,7 +213,7 @@ export const GreekVases = () => {
           },
         },
         Background: {
-          value: "#125da3",
+          value: initialSettings["Background"], // Use value from initialSettings
           onChange: (v) => {
             if (sceneRef.current) {
               // Ensure we set a Color object if the input changes
@@ -201,7 +227,7 @@ export const GreekVases = () => {
       }),
       Lights: folder({
         "Ambient Intensity": {
-          value: 1.46,
+          value: initialSettings["Ambient Intensity"],
           min: 0,
           max: 2,
           step: 0.01,
@@ -210,13 +236,13 @@ export const GreekVases = () => {
           },
         },
         "Ambient Color": {
-          value: "#265cff",
+          value: initialSettings["Ambient Color"],
           onChange: (v) => {
             if (ambientLightRef.current) ambientLightRef.current.color.set(v);
           },
         },
         "Hemi Intensity": {
-          value: 0.31,
+          value: initialSettings["Hemi Intensity"],
           min: 0,
           max: 2,
           step: 0.01,
@@ -226,21 +252,21 @@ export const GreekVases = () => {
           },
         },
         "Hemi Sky Color": {
-          value: "#902c2c",
+          value: initialSettings["Hemi Sky Color"],
           onChange: (v) => {
             if (hemisphereLightRef.current)
               hemisphereLightRef.current.color.set(v);
           },
         },
         "Hemi Ground Color": {
-          value: "#803232",
+          value: initialSettings["Hemi Ground Color"],
           onChange: (v) => {
             if (hemisphereLightRef.current)
               hemisphereLightRef.current.groundColor.set(v);
           },
         },
         "Main Dir Intensity": {
-          value: 0.33,
+          value: initialSettings["Main Dir Intensity"],
           min: 0,
           max: 2,
           step: 0.01,
@@ -250,14 +276,14 @@ export const GreekVases = () => {
           },
         },
         "Main Dir Color": {
-          value: "#6750b4",
+          value: initialSettings["Main Dir Color"],
           onChange: (v) => {
             if (mainDirectionalLightRef.current)
               mainDirectionalLightRef.current.color.set(v);
           },
         },
         "Main Dir Shadow Bias": {
-          value: -0.0,
+          value: initialSettings["Main Dir Shadow Bias"],
           min: -0.01,
           max: 0.01,
           step: 0.0001,
@@ -267,7 +293,7 @@ export const GreekVases = () => {
           },
         },
         "Main Dir Shadow Radius": {
-          value: 1.8,
+          value: initialSettings["Main Dir Shadow Radius"],
           min: 0,
           max: 20,
           step: 0.1,
@@ -277,7 +303,7 @@ export const GreekVases = () => {
           },
         },
         "Gallery Dir Intensity": {
-          value: 0.41,
+          value: initialSettings["Gallery Dir Intensity"],
           min: 0,
           max: 2,
           step: 0.01,
@@ -287,14 +313,14 @@ export const GreekVases = () => {
           },
         },
         "Gallery Dir Color": {
-          value: "#ff9821",
+          value: initialSettings["Gallery Dir Color"],
           onChange: (v) => {
             if (galleryDirectionalLightRef.current)
               galleryDirectionalLightRef.current.color.set(v);
           },
         },
         "Gallery Dir Shadow Bias": {
-          value: 0.01,
+          value: initialSettings["Gallery Dir Shadow Bias"],
           min: -0.01,
           max: 0.01,
           step: 0.0001,
@@ -304,7 +330,7 @@ export const GreekVases = () => {
           },
         },
         "Gallery Dir Shadow Radius": {
-          value: 12.5,
+          value: initialSettings["Gallery Dir Shadow Radius"],
           min: 0,
           max: 20,
           step: 0.1,
@@ -316,7 +342,7 @@ export const GreekVases = () => {
       }),
       "Post-Processing": folder({
         "Outline Strength": {
-          value: 7.8,
+          value: initialSettings["Outline Strength"],
           min: 0,
           max: 10,
           step: 0.1,
@@ -325,7 +351,7 @@ export const GreekVases = () => {
           },
         },
         "Outline Thickness": {
-          value: 0.7,
+          value: initialSettings["Outline Thickness"],
           min: 0,
           max: 4,
           step: 0.1,
@@ -335,7 +361,7 @@ export const GreekVases = () => {
           },
         },
         "Outline Glow": {
-          value: 0.92,
+          value: initialSettings["Outline Glow"],
           min: 0,
           max: 1,
           step: 0.01,
@@ -344,21 +370,21 @@ export const GreekVases = () => {
           },
         },
         "Outline Visible Color": {
-          value: "#feff8c",
+          value: initialSettings["Outline Visible Color"],
           onChange: (v) => {
             if (outlinePassRef.current)
               outlinePassRef.current.visibleEdgeColor.set(v);
           },
         },
         "Outline Hidden Color": {
-          value: "#ff8d3d",
+          value: initialSettings["Outline Hidden Color"],
           onChange: (v) => {
             if (outlinePassRef.current)
               outlinePassRef.current.hiddenEdgeColor.set(v);
           },
         },
         "Enable FXAA": {
-          value: true,
+          value: initialSettings["Enable FXAA"],
           onChange: (v) => {
             if (fxaaPassRef.current) fxaaPassRef.current.enabled = v;
           },
@@ -381,6 +407,85 @@ export const GreekVases = () => {
     ]
   );
   // --- End Leva Controls ---
+
+  // Effect to apply initial settings directly to Three.js objects after mount
+  useEffect(() => {
+    // Ensure all refs are populated before applying settings
+    if (
+      rendererRef.current &&
+      sceneRef.current &&
+      ambientLightRef.current &&
+      hemisphereLightRef.current &&
+      mainDirectionalLightRef.current &&
+      // galleryDirectionalLightRef might be null initially, handle it
+      outlinePassRef.current &&
+      fxaaPassRef.current
+    ) {
+      console.log("Applying initialSettings directly to Three.js objects...");
+
+      const renderer = rendererRef.current;
+      const scene = sceneRef.current;
+      const ambientLight = ambientLightRef.current;
+      const hemisphereLight = hemisphereLightRef.current;
+      const mainDirLight = mainDirectionalLightRef.current;
+      const outlinePass = outlinePassRef.current;
+      const fxaaPass = fxaaPassRef.current;
+
+      // Apply Renderer settings
+      renderer.toneMapping = ACESFilmicToneMapping;
+      renderer.toneMappingExposure = initialSettings["Exposure"];
+      scene.environmentIntensity = initialSettings["Env Intensity"];
+      if (scene.background instanceof THREE.Color) {
+        scene.background.set(initialSettings["Background"]);
+      } else {
+        scene.background = new THREE.Color(initialSettings["Background"]);
+      }
+
+      // Apply Light settings
+      ambientLight.intensity = initialSettings["Ambient Intensity"];
+      ambientLight.color.set(initialSettings["Ambient Color"]);
+      hemisphereLight.intensity = initialSettings["Hemi Intensity"];
+      hemisphereLight.color.set(initialSettings["Hemi Sky Color"]);
+      hemisphereLight.groundColor.set(initialSettings["Hemi Ground Color"]);
+      mainDirLight.intensity = initialSettings["Main Dir Intensity"];
+      mainDirLight.color.set(initialSettings["Main Dir Color"]);
+      mainDirLight.shadow.bias = initialSettings["Main Dir Shadow Bias"];
+      mainDirLight.shadow.radius = initialSettings["Main Dir Shadow Radius"];
+
+      // Apply Gallery Light settings (if available)
+      if (galleryDirectionalLightRef.current) {
+        const galleryDirLight = galleryDirectionalLightRef.current;
+        galleryDirLight.intensity = initialSettings["Gallery Dir Intensity"];
+        galleryDirLight.color.set(initialSettings["Gallery Dir Color"]);
+        galleryDirLight.shadow.bias =
+          initialSettings["Gallery Dir Shadow Bias"];
+        galleryDirLight.shadow.radius =
+          initialSettings["Gallery Dir Shadow Radius"];
+      }
+
+      // Apply Post-Processing settings
+      outlinePass.edgeStrength = initialSettings["Outline Strength"];
+      outlinePass.edgeThickness = initialSettings["Outline Thickness"];
+      outlinePass.edgeGlow = initialSettings["Outline Glow"];
+      outlinePass.visibleEdgeColor.set(
+        initialSettings["Outline Visible Color"]
+      );
+      outlinePass.hiddenEdgeColor.set(initialSettings["Outline Hidden Color"]);
+      fxaaPass.enabled = initialSettings["Enable FXAA"];
+
+      console.log("Initial settings applied directly to Three.js objects.");
+    }
+    // Dependency array ensures this runs once when all primary refs are ready
+  }, [
+    rendererRef.current,
+    sceneRef.current,
+    ambientLightRef.current,
+    hemisphereLightRef.current,
+    mainDirectionalLightRef.current,
+    galleryDirectionalLightRef.current, // Include gallery light ref
+    outlinePassRef.current,
+    fxaaPassRef.current,
+  ]);
 
   // Add gallery objects to the scene imperatively when they are loaded
   useEffect(() => {
