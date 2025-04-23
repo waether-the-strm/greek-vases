@@ -11,7 +11,6 @@ import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
 interface SceneSetupProps {
   mountRef: React.RefObject<HTMLDivElement>;
   cameraHeight: number;
-  isLightMode: boolean;
 }
 
 // Define the return type of the hook
@@ -21,12 +20,13 @@ interface SceneSetupResult {
   rendererRef: React.RefObject<THREE.WebGLRenderer | null>;
   composerRef: React.RefObject<EffectComposer | null>;
   setOutlineObjects: (objects: THREE.Object3D[]) => void;
+  initializationStatus: "pending" | "ready";
 }
 
 // Helper functions for environment setup (internal to the hook)
 const setupLights = (scene: THREE.Scene) => {
   // Główne światło kierunkowe (z okna)
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.3);
   directionalLight.position.set(5, 8, 10);
   directionalLight.castShadow = true;
   directionalLight.shadow.mapSize.width = 2048;
@@ -37,7 +37,7 @@ const setupLights = (scene: THREE.Scene) => {
   directionalLight.shadow.camera.right = 15;
   directionalLight.shadow.camera.top = 15;
   directionalLight.shadow.camera.bottom = -15;
-  directionalLight.shadow.radius = 4; // Miększe cienie
+  directionalLight.shadow.radius = 8;
   directionalLight.shadow.bias = -0.0005;
   scene.add(directionalLight);
 
@@ -46,32 +46,43 @@ const setupLights = (scene: THREE.Scene) => {
 
 // Reintroduce setupFloor function with PlaneGeometry
 const setupFloor = (scene: THREE.Scene) => {
-  const floorGeometry = new THREE.PlaneGeometry(50, 50); // Large plane
+  const floorGeometry = new THREE.PlaneGeometry(50, 50);
   const floorMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffefc9, // Light peach pastel color
-    // color: 0x302b22, // Very dark brown color
-    roughness: 0.8,
-    metalness: 0.2,
-    side: THREE.DoubleSide, // Render both sides just in case
+    color: 0xfff5e6,
+    roughness: 0.9,
+    metalness: 0.0,
+    side: THREE.DoubleSide,
   });
   const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-  floor.rotation.x = -Math.PI / 2; // Rotate plane to be horizontal
-  floor.position.y = 0; // Position at ground level
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = 0;
   floor.receiveShadow = true;
+  floor.userData.noOutline = true;
   scene.add(floor);
-  // console.log(
-  //   "Floor parent UUID:",
-  //   floor.parent?.uuid,
-  //   "Scene UUID:",
-  //   scene.uuid
-  // ); // Log parent UUID
   return floor;
+};
+
+// Add this at the top of the file after imports
+const withoutTransition = (action: () => void) => {
+  const style = document.createElement("style");
+  const css = document.createTextNode(`* {
+     -webkit-transition: none !important;
+     -moz-transition: none !important;
+     -o-transition: none !important;
+     -ms-transition: none !important;
+     transition: none !important;
+  }`);
+  style.appendChild(css);
+
+  document.head.appendChild(style);
+  window.getComputedStyle(style).opacity;
+  action();
+  document.head.removeChild(style);
 };
 
 export const useSceneSetup = ({
   mountRef,
   cameraHeight,
-  isLightMode,
 }: SceneSetupProps): SceneSetupResult => {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -79,226 +90,323 @@ export const useSceneSetup = ({
   const composerRef = useRef<EffectComposer | null>(null);
   const outlinePassRef = useRef<OutlinePass | null>(null);
   const fxaaPassRef = useRef<ShaderPass | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
+  const isInitializedRef = useRef(false);
+  const cleanupFuncRef = useRef<(() => void) | null>(null);
+  const [initializationStatus, setInitializationStatus] = useState<
+    "pending" | "ready"
+  >("pending");
 
-  // State to trigger updates when refs are ready
-  const [isInitialized, setIsInitialized] = useState(false);
+  const setOutlineObjects = useCallback((objects: THREE.Object3D[]) => {
+    console.log(
+      "[setOutlineObjects] Received objects:",
+      objects.map((o) => `${o.name || o.type} (ID: ${o.uuid.substring(0, 6)})`)
+    );
+    if (outlinePassRef.current) {
+      const filteredObjects = objects.filter((obj) => {
+        const isVase =
+          obj.name === "Amfora" ||
+          obj.name === "Krater" ||
+          obj.name === "Hydria";
+        const isPedestal =
+          obj instanceof THREE.Group &&
+          obj.children.some(
+            (child) =>
+              child instanceof THREE.Mesh &&
+              child.geometry instanceof THREE.CylinderGeometry
+          );
+        const hasNoOutline = obj.userData.noOutline === true;
+        const shouldOutline = (isVase || isPedestal) && !hasNoOutline;
+        return shouldOutline;
+      });
+
+      console.log(
+        "[setOutlineObjects] Filtered objects to outline:",
+        filteredObjects.map(
+          (o) => `${o.name || o.type} (ID: ${o.uuid.substring(0, 6)})`
+        )
+      );
+
+      outlinePassRef.current.selectedObjects = filteredObjects;
+      outlinePassRef.current.edgeStrength = 5.0;
+      outlinePassRef.current.edgeGlow = 1.0;
+      outlinePassRef.current.edgeThickness = 2.0;
+      outlinePassRef.current.pulsePeriod = 0;
+      outlinePassRef.current.visibleEdgeColor.set(0x000000);
+      outlinePassRef.current.hiddenEdgeColor.set(0x000000);
+      console.log("[setOutlineObjects] OutlinePass updated.");
+    } else {
+      console.warn("[setOutlineObjects] outlinePassRef.current is null!");
+    }
+  }, []);
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    if (!mountRef.current) {
+      console.log("useEffect skipped: mountRef is null");
+      return;
+    }
+    console.log("useEffect running for useSceneSetup");
+    setInitializationStatus("pending");
+    isInitializedRef.current = false;
 
     const currentMount = mountRef.current;
-    const width = currentMount.clientWidth;
-    const height = currentMount.clientHeight;
+    let resizeObserver: ResizeObserver | null = null;
 
-    // Renderer setup
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(width, height);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = isLightMode ? 0.9 : 0.5;
-    currentMount.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
+    const setup = (width: number, height: number): (() => void) => {
+      if (isInitializedRef.current) {
+        console.log("Initialization already done, skipping setup.");
+        return () => {};
+      }
+      console.log(`Initializing scene with dimensions: ${width}x${height}`);
 
-    // Scene setup
-    const scene = new THREE.Scene();
-    const environment = new RoomEnvironment();
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    const envTexture = pmremGenerator.fromScene(
-      environment,
-      isLightMode ? 0.03 : 0.01
-    ).texture;
-    scene.environment = envTexture;
-    scene.background = new THREE.Color(isLightMode ? 0x2a4b7c : 0x000000);
-    environment.dispose();
-    sceneRef.current = scene;
+      // --- Start of Setup Logic ---
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xe6f3ff);
+      sceneRef.current = scene;
 
-    // Camera
-    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    camera.position.set(0, cameraHeight, 10);
-    cameraRef.current = camera;
+      const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+      camera.position.set(0, cameraHeight, 10);
+      cameraRef.current = camera;
 
-    // Setup environment elements
-    const lights = setupLights(scene);
-    const floor = setupFloor(scene);
-
-    // Lights - Złagodzone oświetlenie dla miękkiego efektu
-    const ambientLight = new THREE.AmbientLight(
-      isLightMode ? 0xffffff : 0x202020,
-      isLightMode ? 0.35 : 0.1
-    );
-    scene.add(ambientLight);
-
-    const hemisphereLight = new THREE.HemisphereLight(
-      isLightMode ? 0xffffff : 0x202020,
-      isLightMode ? 0xd8e8ff : 0x000000,
-      isLightMode ? 0.25 : 0.05
-    );
-    scene.add(hemisphereLight);
-
-    // OrbitControls for debugging/alternative view
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.screenSpacePanning = false;
-    controls.maxPolarAngle = Math.PI / 2;
-    controls.enabled = false;
-
-    // --- Post-processing ---
-    const composer = new EffectComposer(renderer);
-    composerRef.current = composer;
-
-    const renderPass = new RenderPass(scene, camera);
-    composer.addPass(renderPass);
-
-    // Outline pass setup
-    const outlinePass = new OutlinePass(
-      new THREE.Vector2(width, height),
-      scene,
-      camera
-    );
-    outlinePass.edgeStrength = 1.5; // Subtelna siła
-    outlinePass.edgeGlow = 0;
-    outlinePass.edgeThickness = 1.0; // Cienki obrys
-    outlinePass.pulsePeriod = 0;
-    outlinePass.visibleEdgeColor.set("#000000");
-    outlinePass.hiddenEdgeColor.set("#000000");
-    outlinePass.overlayMaterial.blending = THREE.NormalBlending;
-    outlinePass.downSampleRatio = 1;
-    outlinePass.clear = true;
-
-    // Set outlines for all meshes
-    const setOutlineForAllObjects = () => {
-      const objectsToOutline: THREE.Object3D[] = [];
-      scene.traverse((object) => {
-        if (
-          object instanceof THREE.Mesh &&
-          !(object.material instanceof THREE.ShadowMaterial) &&
-          !(object.material instanceof THREE.LineBasicMaterial)
-        ) {
-          objectsToOutline.push(object);
-
-          // Sprawdź czy obiekt ma dzieci (np. linie krawędzi)
-          object.children.forEach((child) => {
-            if (child instanceof THREE.LineSegments) {
-              child.layers.enable(1);
-            }
-          });
-        }
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+        stencil: true,
+        powerPreference: "high-performance",
       });
-      outlinePass.selectedObjects = objectsToOutline;
-    };
-
-    // Zamiast eventListenera, użyjmy MutationObserver na rendererze
-    const observer = new MutationObserver(() => {
-      setOutlineForAllObjects();
-    });
-
-    observer.observe(renderer.domElement.parentElement!, {
-      childList: true,
-      subtree: true,
-    });
-
-    setOutlineForAllObjects();
-    outlinePassRef.current = outlinePass;
-    composer.addPass(outlinePass);
-
-    // Add FXAA Pass for anti-aliasing
-    const fxaaPass = new ShaderPass(FXAAShader);
-    const pixelRatio = renderer.getPixelRatio();
-    fxaaPass.material.uniforms["resolution"].value.x = 1 / (width * pixelRatio);
-    fxaaPass.material.uniforms["resolution"].value.y =
-      1 / (height * pixelRatio);
-    fxaaPassRef.current = fxaaPass;
-    composer.addPass(fxaaPass);
-
-    // Adjust renderer settings for better cartoon look - REVERTED
-    // renderer.toneMapping = THREE.NoToneMapping;
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-    setIsInitialized(true); // Mark as initialized
-
-    // Basic resize handling within the setup hook
-    const handleResize = () => {
-      if (!cameraRef.current || !rendererRef.current || !currentMount) return;
-
-      const newWidth = currentMount.clientWidth;
-      const newHeight = currentMount.clientHeight;
-
-      cameraRef.current.aspect = newWidth / newHeight;
-      cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(newWidth, newHeight);
-      // Check if composer exists before resizing
-      if (composerRef.current) {
-        composerRef.current.setSize(newWidth, newHeight); // Resize composer
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 0.4;
+      if (mountRef.current) {
+        mountRef.current.appendChild(renderer.domElement);
+      } else {
+        console.error(
+          "Mount point disappeared before appending renderer DOM element."
+        );
+        renderer.dispose();
+        return () => {};
       }
-      // Check if outline pass exists before resizing
-      if (outlinePassRef.current) {
-        outlinePassRef.current.resolution.set(newWidth, newHeight); // Resize outline pass
-      }
-      // Resize FXAA pass
-      if (fxaaPassRef.current) {
-        const pixelRatio = rendererRef.current.getPixelRatio();
-        fxaaPassRef.current.material.uniforms["resolution"].value.x =
-          1 / (newWidth * pixelRatio);
-        fxaaPassRef.current.material.uniforms["resolution"].value.y =
-          1 / (newHeight * pixelRatio);
-      }
-    };
+      rendererRef.current = renderer;
 
-    window.addEventListener("resize", handleResize);
+      const environment = new RoomEnvironment();
+      const pmremGenerator = new THREE.PMREMGenerator(renderer);
+      const envTexture = pmremGenerator.fromScene(environment, 0.02).texture;
+      scene.environment = envTexture;
+      environment.dispose();
 
-    // Cleanup function
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", handleResize);
+      const lights = setupLights(scene);
+      const floor = setupFloor(scene);
+      const ambientLight = new THREE.AmbientLight(0xffefd5, 0.6);
+      scene.add(ambientLight);
+      const hemisphereLight = new THREE.HemisphereLight(
+        0xfff0e6,
+        0xffe4e1,
+        0.4
+      );
+      scene.add(hemisphereLight);
 
-      // Cleanup environment elements
-      lights.forEach((light) => scene.remove(light));
-      if (floor) {
-        scene.remove(floor);
-        floor.geometry.dispose();
-        if (Array.isArray(floor.material)) {
-          floor.material.forEach((m) => m.dispose());
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.screenSpacePanning = false;
+      controls.maxPolarAngle = Math.PI / 2;
+      controls.enabled = false;
+      controlsRef.current = controls;
+
+      const renderTarget = new THREE.WebGLRenderTarget(width, height, {
+        samples: 4,
+        colorSpace: THREE.SRGBColorSpace,
+        depthBuffer: true,
+        stencilBuffer: true,
+      });
+
+      const composer = new EffectComposer(renderer, renderTarget);
+      composerRef.current = composer;
+      const renderPass = new RenderPass(scene, camera);
+      composer.addPass(renderPass);
+
+      const outlinePass = new OutlinePass(
+        new THREE.Vector2(width, height),
+        scene,
+        camera
+      );
+      outlinePass.selectedObjects = [];
+      outlinePass.edgeStrength = 5.0;
+      outlinePass.edgeGlow = 1.0;
+      outlinePass.edgeThickness = 2.0;
+      outlinePass.pulsePeriod = 0;
+      outlinePass.visibleEdgeColor.set(0x000000);
+      outlinePass.hiddenEdgeColor.set(0x000000);
+      outlinePassRef.current = outlinePass;
+      composer.addPass(outlinePass);
+
+      const fxaaPass = new ShaderPass(FXAAShader);
+      const pixelRatio = renderer.getPixelRatio();
+      fxaaPass.material.uniforms["resolution"].value.x =
+        1 / (width * pixelRatio);
+      fxaaPass.material.uniforms["resolution"].value.y =
+        1 / (height * pixelRatio);
+      fxaaPass.enabled = false;
+      fxaaPassRef.current = fxaaPass;
+      composer.addPass(fxaaPass);
+      // --- End of Setup Logic ---
+
+      const handleResize = () => {
+        if (
+          !cameraRef.current ||
+          !rendererRef.current ||
+          !composerRef.current ||
+          !outlinePassRef.current ||
+          !fxaaPassRef.current ||
+          !mountRef.current
+        )
+          return;
+        const currentWidth = mountRef.current.clientWidth;
+        const currentHeight = mountRef.current.clientHeight;
+        if (currentWidth > 0 && currentHeight > 0) {
+          cameraRef.current.aspect = currentWidth / currentHeight;
+          cameraRef.current.updateProjectionMatrix();
+          rendererRef.current.setSize(currentWidth, currentHeight);
+          composerRef.current.setSize(currentWidth, currentHeight);
+          outlinePassRef.current.resolution.set(currentWidth, currentHeight);
+          const newPixelRatio = rendererRef.current.getPixelRatio();
+          fxaaPassRef.current.material.uniforms["resolution"].value.x =
+            1 / (currentWidth * newPixelRatio);
+          fxaaPassRef.current.material.uniforms["resolution"].value.y =
+            1 / (currentHeight * newPixelRatio);
         } else {
-          floor.material.dispose();
+          console.warn(
+            "Resize event with zero dimensions detected during runtime."
+          );
         }
-      }
+      };
 
-      // Cleanup environment map and generator
-      if (envTexture) {
-        envTexture.dispose();
-      }
-      if (pmremGenerator) {
-        pmremGenerator.dispose();
-      }
+      handleResize();
+      window.addEventListener("resize", handleResize);
 
-      // Cleanup renderer
-      if (rendererRef.current) {
-        rendererRef.current.dispose();
-        if (rendererRef.current.domElement.parentNode === currentMount) {
-          currentMount.removeChild(rendererRef.current.domElement);
+      isInitializedRef.current = true;
+      setInitializationStatus("ready");
+      console.log("Scene setup complete, status set to ready.");
+
+      // Return the cleanup function
+      return () => {
+        console.log("Cleaning up scene resources...");
+        window.removeEventListener("resize", handleResize);
+
+        if (sceneRef.current) {
+          const scene = sceneRef.current;
+          lights.forEach((light) => {
+            if (light.target && light.target.parent) scene.remove(light.target);
+            scene.remove(light);
+          });
+          if (floor) {
+            scene.remove(floor);
+          }
+          scene.remove(ambientLight);
+          scene.remove(hemisphereLight);
+          if (scene.environment) {
+            scene.environment.dispose();
+            scene.environment = null;
+          }
         }
-      }
-
-      // Nullify refs
-      sceneRef.current = null;
-      cameraRef.current = null;
-      rendererRef.current = null;
-      composerRef.current = null;
-      outlinePassRef.current = null;
-      fxaaPassRef.current = null;
+        if (floor) {
+          floor.geometry.dispose();
+          if (Array.isArray(floor.material)) {
+            floor.material.forEach((m) => m.dispose());
+          } else {
+            floor.material.dispose();
+          }
+        }
+        if (pmremGenerator) pmremGenerator.dispose();
+        if (envTexture) envTexture.dispose();
+        if (composerRef.current) {
+          const composer = composerRef.current;
+          composer.passes.forEach((pass) => {
+            composer.removePass(pass);
+          });
+          if (composer.renderTarget1) composer.renderTarget1.dispose();
+          if (composer.renderTarget2) composer.renderTarget2.dispose();
+          renderTarget.dispose();
+        }
+        if (controlsRef.current) controlsRef.current.dispose();
+        if (rendererRef.current) {
+          if (rendererRef.current.domElement.parentNode === mountRef.current) {
+            mountRef.current?.removeChild(rendererRef.current.domElement);
+          }
+          rendererRef.current.dispose();
+        }
+        sceneRef.current = null;
+        cameraRef.current = null;
+        rendererRef.current = null;
+        composerRef.current = null;
+        outlinePassRef.current = null;
+        fxaaPassRef.current = null;
+        controlsRef.current = null;
+        isInitializedRef.current = false;
+        setInitializationStatus("pending");
+        console.log("Scene cleanup complete, status reset to pending.");
+      };
     };
-  }, [mountRef, cameraHeight, isLightMode]);
 
-  // Function to set objects for outlining
-  const setOutlineObjects = useCallback((objects: THREE.Object3D[]) => {
-    if (outlinePassRef.current) {
-      outlinePassRef.current.selectedObjects = objects;
-      console.log("Outline objects set:", objects.length);
-    }
-  }, []); // No dependencies needed as it uses refs
+    // --- Effect Execution Logic --- Always use ResizeObserver
+    console.log("Setting up ResizeObserver...");
+    resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        const { width, height } = entry.contentRect;
+        console.log(
+          `ResizeObserver callback: ${width}x${height}, initialized: ${isInitializedRef.current}`
+        );
+        if (width > 0 && height > 0 && !isInitializedRef.current) {
+          console.log(
+            "ResizeObserver detected valid dimensions, running setup..."
+          );
+          // Run setup and store its cleanup function in the ref
+          cleanupFuncRef.current = setup(width, height);
+
+          // Stop observing ONLY if setup was successful and we are initialized
+          if (isInitializedRef.current && resizeObserver) {
+            console.log("Setup successful, stopping ResizeObserver.");
+            // We disconnect here, the main cleanup will handle the ref
+            resizeObserver.disconnect(); // Use disconnect inside callback too
+            resizeObserver = null;
+          }
+        }
+      }
+    });
+
+    resizeObserver.observe(currentMount);
+    console.log("ResizeObserver observing mount point.");
+
+    // Return the main cleanup function for the useEffect hook
+    return () => {
+      console.log("Running useEffect cleanup...");
+      // Disconnect observer if it's still active
+      if (resizeObserver) {
+        console.log("Disconnecting active ResizeObserver in cleanup...");
+        resizeObserver.disconnect();
+        resizeObserver = null;
+      }
+      // Call the stored cleanup function if setup was ever called
+      if (cleanupFuncRef.current) {
+        console.log("Calling stored setup cleanup function...");
+        cleanupFuncRef.current();
+        cleanupFuncRef.current = null; // Clear the ref
+      }
+      // Ensure isInitialized is reset even if cleanupFunc wasn't called (e.g., immediate unmount)
+      if (isInitializedRef.current) {
+        console.log("Resetting initialization flag in main cleanup.");
+        isInitializedRef.current = false;
+      }
+      // Zawsze resetuj stan w głównym cleanupie
+      setInitializationStatus("pending");
+      console.log("useEffect cleanup finished.");
+    };
+  }, [mountRef, cameraHeight, setOutlineObjects]);
 
   return {
     sceneRef,
@@ -306,5 +414,6 @@ export const useSceneSetup = ({
     rendererRef,
     composerRef,
     setOutlineObjects,
+    initializationStatus,
   };
 };
