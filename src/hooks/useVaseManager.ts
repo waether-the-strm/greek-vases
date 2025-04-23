@@ -30,6 +30,14 @@ interface VaseManagerProps {
   initialBrokenVases?: number;
 }
 
+// Define return type including vasesRef
+interface VaseManagerResult {
+  brokenVasesCount: number;
+  handleVaseClick: (coordsNDC?: THREE.Vector2) => void; // Keep the argument here
+  setOnVaseBrokenCallback: (callback: (info: BrokenVaseInfo) => void) => void;
+  vasesRef: React.RefObject<THREE.Mesh[]>; // Return the ref
+}
+
 // --- Function to Apply Pastel Colors to Pedestals ---
 // Modified to return the applied color
 const applyPastelToPedestal = (
@@ -57,149 +65,187 @@ export const useVaseManager = ({
   cameraRef,
   isPointerLocked,
   initialBrokenVases = 0,
-}: VaseManagerProps) => {
+}: VaseManagerProps): VaseManagerResult => {
   const [brokenVasesCount, setBrokenVasesCount] =
     useState<number>(initialBrokenVases);
-  const vasesRef = useRef<THREE.Mesh[]>([]); // Use ref to store the array of vase meshes
-  const brokenVasesSetRef = useRef<Set<THREE.Mesh>>(new Set()); // Use ref for the set of broken vases
+  const vasesRef = useRef<THREE.Mesh[]>([]);
+  const brokenVasesSetRef = useRef<Set<THREE.Mesh>>(new Set());
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
-  const pedestalsRef = useRef<THREE.Group[]>([]); // Ref to store pedestals
+  const pedestalsRef = useRef<THREE.Group[]>([]);
+  const hitboxesRef = useRef<THREE.Mesh[]>([]); // Ref for invisible hitboxes
 
   // Callback to notify about a broken vase (for shard creation)
   const onVaseBrokenRef = useRef<(info: BrokenVaseInfo) => void>(() => {});
+
+  // --- Define Hitbox Geometry & Material ---
+  // Adjust radius for desired hitbox size (e.g., 1.5x vase radius if known, or a fixed value)
+  const hitboxRadius = 0.5; // Example radius, adjust as needed
+  const hitboxGeometry = new THREE.SphereGeometry(hitboxRadius, 8, 8); // Simple sphere
+  const hitboxMaterial = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0,
+    // visible: false, // Alternatively, use visible: false
+    depthWrite: false, // Important for transparency potentially
+  });
+  // ----------------------------------------
 
   // Initialize pedestals and vases
   useEffect(() => {
     if (!sceneRef.current) return;
     const scene = sceneRef.current;
+    const gradientMap =
+      (scene.userData.toonGradientTexture as THREE.Texture) || null;
 
     // Clear previous objects managed by this hook
-    pedestalsRef.current.forEach((p) => {
-      scene.remove(p);
-    });
+    pedestalsRef.current.forEach((p) => scene.remove(p));
+    hitboxesRef.current.forEach((h) => scene.remove(h)); // Clear hitboxes too
     pedestalsRef.current = [];
-    vasesRef.current = []; // Vases are children of pedestals, disposed above
+    vasesRef.current = [];
+    hitboxesRef.current = []; // Clear hitbox ref array
     brokenVasesSetRef.current.clear();
 
     const newVases: THREE.Mesh[] = [];
     const newPedestals: THREE.Group[] = [];
+    const newHitboxes: THREE.Mesh[] = []; // Array for new hitboxes
 
     for (let i = -5; i <= 5; i += 2.5) {
-      const leftPedestal = createPedestal(-5, i * 2);
-      const rightPedestal = createPedestal(5, i * 2);
+      const leftPedestal = createPedestal(-5, i * 2, gradientMap);
+      const rightPedestal = createPedestal(5, i * 2, gradientMap);
 
       scene.add(leftPedestal);
       scene.add(rightPedestal);
       newPedestals.push(leftPedestal, rightPedestal);
 
-      // Create vases using the original function call
-      const leftVase = createVaseOnPedestal(leftPedestal, -5, i * 2);
-      const rightVase = createVaseOnPedestal(rightPedestal, 5, i * 2);
+      // Create vases
+      const leftVase = createVaseOnPedestal(leftPedestal, gradientMap);
+      const rightVase = createVaseOnPedestal(rightPedestal, gradientMap);
 
-      // Apply pastel colors to PEDESTALS and store the color in vase userData
-      let leftPedestalColor = 0xffffff; // Default color
+      // --- Create and link Hitboxes ---
+      const createAndLinkHitbox = (
+        vase: THREE.Mesh | null
+      ): THREE.Mesh | null => {
+        if (!vase) return null;
+        const hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial.clone()); // Clone material
+        // Position hitbox at the vase's initial position (levitation is visual only)
+        const initialPosition = new THREE.Vector3();
+        vase.getWorldPosition(initialPosition);
+        hitbox.position.copy(initialPosition);
+        hitbox.userData.targetVase = vase; // Link hitbox to vase
+        scene.add(hitbox);
+        newHitboxes.push(hitbox);
+        return hitbox;
+      };
+      createAndLinkHitbox(leftVase);
+      createAndLinkHitbox(rightVase);
+      // -------------------------------
+
+      // Apply pastel colors and store data (including initialY for levitation)
+      let leftPedestalColor = 0xffffff;
       let rightPedestalColor = 0xffffff;
       if (leftVase) {
         leftPedestalColor = applyPastelToPedestal(leftPedestal, leftVase);
-        leftVase.userData.pedestalColor = leftPedestalColor; // Store color
+        leftVase.userData.pedestalColor = leftPedestalColor;
+        leftVase.userData.initialY = leftVase.position.y; // Store initial Y relative to pedestal
+        leftVase.userData.phaseOffset = Math.random() * Math.PI * 2;
       }
       if (rightVase) {
         rightPedestalColor = applyPastelToPedestal(rightPedestal, rightVase);
-        rightVase.userData.pedestalColor = rightPedestalColor; // Store color
+        rightVase.userData.pedestalColor = rightPedestalColor;
+        rightVase.userData.initialY = rightVase.position.y; // Store initial Y relative to pedestal
+        rightVase.userData.phaseOffset = Math.random() * Math.PI * 2;
       }
 
-      // --- Adjust Vase Material Properties ---
-      const adjustVaseMaterial = (vase: THREE.Mesh) => {
-        if (vase.material && !Array.isArray(vase.material)) {
-          const material = vase.material as THREE.MeshStandardMaterial;
-          material.roughness = 0.9; // More matte
-          material.metalness = 0.1; // Less metallic
-        }
-      };
-      if (leftVase) adjustVaseMaterial(leftVase);
-      if (rightVase) adjustVaseMaterial(rightVase);
-      // --- End Adjust Vase Material ---
-
-      newVases.push(leftVase, rightVase);
+      // Add vases to the list ONLY if they were created
+      if (leftVase) newVases.push(leftVase);
+      if (rightVase) newVases.push(rightVase);
     }
     vasesRef.current = newVases;
-    pedestalsRef.current = newPedestals; // Store pedestals
+    pedestalsRef.current = newPedestals;
+    hitboxesRef.current = newHitboxes; // Store hitboxes
 
     // Cleanup function for this effect
     return () => {
-      const currentScene = sceneRef.current; // Capture sceneRef value
-      // Check if scene still exists during cleanup
+      const currentScene = sceneRef.current;
       if (currentScene) {
-        pedestalsRef.current.forEach((p) => {
-          currentScene.remove(p); // Remove from the scene
-        });
+        pedestalsRef.current.forEach((p) => currentScene.remove(p));
+        hitboxesRef.current.forEach((h) => currentScene.remove(h)); // Remove hitboxes too
       }
       // Clear refs
       pedestalsRef.current = [];
       vasesRef.current = [];
+      hitboxesRef.current = [];
       brokenVasesSetRef.current.clear();
+      // Dispose hitbox geometry/material if needed (usually not necessary unless many unique ones)
+      // hitboxGeometry.dispose();
+      // hitboxMaterial.dispose();
     };
-  }, [sceneRef]); // Run only when sceneRef changes (effectively once on mount)
+  }, [sceneRef]);
 
   // Function to handle vase breaking logic
-  const handleVaseClick = useCallback(() => {
-    // Log when the function is called
-    // console.log("handleVaseClick called"); // Remove log
+  const handleVaseClick = useCallback(
+    (coordsNDC?: THREE.Vector2) => {
+      // console.log("handleVaseClick called"); // Keep removed
 
-    if (!cameraRef.current || !sceneRef.current) return;
-    // Removed isPointerLocked check - tap detection handles activation
+      if (!cameraRef.current || !sceneRef.current) return;
 
-    raycasterRef.current.setFromCamera(new THREE.Vector2(), cameraRef.current);
-    const intersects = raycasterRef.current.intersectObjects(
-      vasesRef.current,
-      false
-    );
+      const raycastCoords = coordsNDC || new THREE.Vector2();
 
-    if (intersects.length > 0) {
-      const intersectedObject = intersects[0].object;
-      if (intersectedObject instanceof THREE.Mesh) {
-        const vase = intersectedObject;
+      // Raycast against HITBOXES now
+      raycasterRef.current.setFromCamera(raycastCoords, cameraRef.current);
+      const intersects = raycasterRef.current.intersectObjects(
+        hitboxesRef.current, // Target the hitboxes
+        false
+      );
 
-        if (!brokenVasesSetRef.current.has(vase)) {
-          brokenVasesSetRef.current.add(vase);
+      // Process the FIRST intersected hitbox
+      if (intersects.length > 0) {
+        const intersectedHitbox = intersects[0].object as THREE.Mesh; // Cast to Mesh
+        const targetVase = intersectedHitbox.userData.targetVase as THREE.Mesh; // Get the linked vase
+
+        if (targetVase && !brokenVasesSetRef.current.has(targetVase)) {
+          brokenVasesSetRef.current.add(targetVase);
           setBrokenVasesCount((prev) => prev + 1);
 
           const worldPosition = new THREE.Vector3();
-          vase.getWorldPosition(worldPosition);
+          targetVase.getWorldPosition(worldPosition); // Position of the visible vase
 
-          // Retrieve pedestal color from userData
-          const pedestalColorHex = vase.userData.pedestalColor || 0xffffff; // Use stored color or white fallback
+          const pedestalColorHex =
+            targetVase.userData.pedestalColor || 0xffffff;
           const shardColor = new THREE.Color(pedestalColorHex);
 
-          // IMPORTANT: Dispose vase resources BEFORE removing from parent
-          if (vase.material && !Array.isArray(vase.material)) {
-            const baseMaterial = vase.material as THREE.MeshStandardMaterial;
-            if (baseMaterial.map) {
-              baseMaterial.map.dispose(); // Dispose vase texture
-            }
+          // Dispose visible vase resources
+          if (targetVase.material && !Array.isArray(targetVase.material)) {
+            const baseMaterial =
+              targetVase.material as THREE.MeshStandardMaterial;
+            if (baseMaterial.map) baseMaterial.map.dispose();
             baseMaterial.dispose();
-            if (vase.geometry) {
-              vase.geometry.dispose();
-            }
+            if (targetVase.geometry) targetVase.geometry.dispose();
           }
 
-          // Remove vase from scene (parent pedestal)
-          vase.removeFromParent();
+          // Remove visible vase and its hitbox
+          targetVase.removeFromParent();
+          intersectedHitbox.removeFromParent(); // Remove hitbox from scene
 
-          // Remove vase from the internal ref array
-          vasesRef.current = vasesRef.current.filter((v) => v !== vase);
+          // Update refs
+          vasesRef.current = vasesRef.current.filter((v) => v !== targetVase);
+          hitboxesRef.current = hitboxesRef.current.filter(
+            (h) => h !== intersectedHitbox
+          );
 
           playBreakSound();
 
-          // Notify that a vase was broken for shard creation, passing pedestal color
           onVaseBrokenRef.current({
             position: worldPosition,
-            shardColor: shardColor, // Pass the pedestal color as shardColor
+            shardColor: shardColor,
           });
+
+          // No need to loop or break, we only process the first hit hitbox
         }
       }
-    }
-  }, [cameraRef, sceneRef]); // Dependencies for the click handler
+      // Removed the loop logic for iterating intersects
+    },
+    [cameraRef, sceneRef]
+  ); // Dependencies for the click handler
 
   return {
     brokenVasesCount,
@@ -208,5 +254,6 @@ export const useVaseManager = ({
     setOnVaseBrokenCallback: (callback: (info: BrokenVaseInfo) => void) => {
       onVaseBrokenRef.current = callback;
     },
+    vasesRef, // Return the ref
   };
 };

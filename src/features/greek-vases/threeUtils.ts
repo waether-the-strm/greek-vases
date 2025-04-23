@@ -133,7 +133,11 @@ export function playBreakSound() {
 }
 
 // Function to create pedestal
-export function createPedestal(x: number, z: number): THREE.Group {
+export function createPedestal(
+  x: number,
+  z: number,
+  gradientMap: THREE.Texture | null
+): THREE.Group {
   const group = new THREE.Group();
 
   const positionHash = Math.abs(x * 1000 + z * 10);
@@ -156,10 +160,12 @@ export function createPedestal(x: number, z: number): THREE.Group {
 
   // Column Base
   const baseGeometry = new THREE.CylinderGeometry(0.7, 0.8, baseHeight, 24);
-  const baseMaterial = new THREE.MeshStandardMaterial({
-    color: 0xf0f0f0,
-    roughness: 0.2,
-  });
+  const baseMaterial = gradientMap
+    ? new THREE.MeshToonMaterial({
+        color: 0xbababa, // Ciemniejszy szary dla bazy
+        gradientMap: gradientMap,
+      })
+    : new THREE.MeshStandardMaterial({ color: 0xbababa, roughness: 0.8 });
   const base = new THREE.Mesh(baseGeometry, baseMaterial);
   base.position.y = baseHeight / 2;
   base.castShadow = true;
@@ -175,47 +181,15 @@ export function createPedestal(x: number, z: number): THREE.Group {
     1
   );
 
-  // Column Texture (Fluting)
-  const columnCanvas = document.createElement("canvas");
-  const columnCtx = columnCanvas.getContext("2d");
-  if (!columnCtx) return group; // Return group if context fails
-
-  columnCanvas.width = 64; // Smaller texture for performance
-  columnCanvas.height = 512;
-
-  columnCtx.fillStyle = "#f0f0f0";
-  columnCtx.fillRect(0, 0, columnCanvas.width, columnCanvas.height);
-
-  const flutesCount = 10; // Fewer flutes for smaller texture
-  const fluteWidth = columnCanvas.width / flutesCount;
-
-  for (let i = 0; i < flutesCount; i++) {
-    const gradient = columnCtx.createLinearGradient(
-      i * fluteWidth,
-      0,
-      (i + 0.5) * fluteWidth,
-      0
-    );
-
-    gradient.addColorStop(0, "#e0e0e0");
-    gradient.addColorStop(0.5, "#b0b0b0");
-    gradient.addColorStop(1, "#e0e0e0");
-
-    columnCtx.fillStyle = gradient;
-    columnCtx.fillRect(i * fluteWidth, 0, fluteWidth, columnCanvas.height);
-  }
-
-  const columnTexture = new THREE.CanvasTexture(columnCanvas);
-  columnTexture.wrapS = THREE.RepeatWrapping;
-  columnTexture.wrapT = THREE.RepeatWrapping;
-  columnTexture.repeat.set(4, 1); // Repeat texture horizontally
-  columnTexture.needsUpdate = true;
-
-  const columnMaterial = new THREE.MeshStandardMaterial({
-    color: 0xf8f8f8,
-    roughness: 0.1,
-    map: columnTexture,
-  });
+  // Column Texture (Fluting) - Simplified for Toon Material
+  // We might not need the complex texture if Toon shading provides enough detail
+  // For now, keep a simple color
+  const columnMaterial = gradientMap
+    ? new THREE.MeshToonMaterial({
+        color: 0xe0e0e0, // Jasnoszary dla trzonu
+        gradientMap: gradientMap,
+      })
+    : new THREE.MeshStandardMaterial({ color: 0xe0e0e0, roughness: 0.5 });
 
   const column = new THREE.Mesh(columnGeometry, columnMaterial);
   column.position.y = baseHeight + columnHeight / 2;
@@ -225,10 +199,12 @@ export function createPedestal(x: number, z: number): THREE.Group {
 
   // Capital
   const capGeometry = new THREE.CylinderGeometry(0.5, 0.4, capHeight, 24);
-  const capMaterial = new THREE.MeshStandardMaterial({
-    color: 0xf0f0f0,
-    roughness: 0.1,
-  });
+  const capMaterial = gradientMap
+    ? new THREE.MeshToonMaterial({
+        color: 0xbababa, // Ciemniejszy szary dla kapitelu
+        gradientMap: gradientMap,
+      })
+    : new THREE.MeshStandardMaterial({ color: 0xbababa, roughness: 0.8 });
   const cap = new THREE.Mesh(capGeometry, capMaterial);
   cap.position.y = baseHeight + columnHeight + capHeight / 2;
   cap.castShadow = true;
@@ -236,7 +212,6 @@ export function createPedestal(x: number, z: number): THREE.Group {
   group.add(cap);
 
   group.position.set(x, 0, z);
-  // Removed pedestalPositions.push({ x, z }); - This state should be managed elsewhere
 
   return group;
 }
@@ -245,49 +220,57 @@ export function createPedestal(x: number, z: number): THREE.Group {
 // Note: `vases` array modification is removed, it should be managed by the caller hook
 export function createVaseOnPedestal(
   pedestal: THREE.Group,
-  x: number,
-  z: number
+  gradientMap: THREE.Texture | null
 ): THREE.Mesh {
-  const positionHashForType = Math.abs(x * 500 + z * 50);
-  const vaseType = (positionHashForType % 3) + 1;
-  const sizeScale = 0.8 + (positionHashForType % 100) / 250;
+  const type = Math.ceil(Math.random() * 3);
+  const geometry = createVaseGeometry(type);
+  const texture = createVaseTexture(type);
 
-  const vaseGeometry = createVaseGeometry(vaseType);
-  const vaseTexture = createVaseTexture(vaseType);
-  const vaseMaterial = new THREE.MeshStandardMaterial({
-    map: vaseTexture,
-    roughness: 0.7,
-    metalness: 0.05,
-  });
+  const material = gradientMap
+    ? new THREE.MeshToonMaterial({
+        map: texture,
+        gradientMap: gradientMap,
+      })
+    : new THREE.MeshStandardMaterial({ map: texture, roughness: 0.7 });
 
-  const vase = new THREE.Mesh(vaseGeometry, vaseMaterial);
-  // Calculate vase position based on pedestal height
-  let pedestalHeight = 0; // Calculate actual height from pedestal children if needed
+  const vase = new THREE.Mesh(geometry, material);
+
+  // Calculate pedestal height dynamically
+  let pedestalHeight = 0;
   pedestal.children.forEach((child) => {
-    if (child instanceof THREE.Mesh) {
-      const box = new THREE.Box3().setFromObject(child);
-      pedestalHeight = Math.max(pedestalHeight, box.max.y);
+    if (
+      child instanceof THREE.Mesh &&
+      child.geometry instanceof THREE.CylinderGeometry
+    ) {
+      pedestalHeight = Math.max(
+        pedestalHeight,
+        child.position.y + child.geometry.parameters.height / 2
+      );
     }
   });
+
   vase.position.set(
     0,
-    pedestalHeight + (vaseGeometry.parameters.height * sizeScale) / 2,
+    pedestalHeight + (geometry.parameters.height / 2) * 0.9,
     0
-  ); // Position on top
+  ); // Position vase on top
+  vase.scale.set(0.9, 0.9, 0.9);
 
-  vase.scale.set(sizeScale, sizeScale, sizeScale);
+  // Use the type to set the name for easier identification
+  vase.name = vaseNames[type] || "Vase";
   vase.castShadow = true;
   vase.receiveShadow = true;
 
+  // User data for state management (e.g., if it's broken)
   vase.userData = {
-    type: vaseType,
-    name: vaseNames[vaseType],
-    size: sizeScale,
-    pedestal: { x, z },
-    broken: false,
+    isBroken: false,
+    type: type,
+    originalPosition: vase.position.clone(),
+    originalRotation: vase.rotation.clone(),
+    shardColor: material.color || new THREE.Color(0xffffff), // Store color for shards
   };
 
-  pedestal.add(vase);
-  // Removed vases.push(vase); - This state should be managed elsewhere
+  pedestal.add(vase); // Add vase directly to the pedestal group
+
   return vase;
 }
