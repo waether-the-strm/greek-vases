@@ -125,48 +125,50 @@ export const useSceneSetup = ({
     "pending" | "ready"
   >("pending");
 
-  const setOutlineObjects = useCallback((objects: THREE.Object3D[]) => {
-    console.log(
-      "[setOutlineObjects] Received objects:",
-      objects.map((o) => `${o.name || o.type} (ID: ${o.uuid.substring(0, 6)})`)
-    );
-    if (outlinePassRef.current) {
-      const filteredObjects = objects.filter((obj) => {
-        const isVase =
-          obj.name === "Amfora" ||
-          obj.name === "Krater" ||
-          obj.name === "Hydria";
-        const isPedestal =
-          obj instanceof THREE.Group &&
-          obj.children.some(
-            (child) =>
-              child instanceof THREE.Mesh &&
-              child.geometry instanceof THREE.CylinderGeometry
-          );
-        const hasNoOutline = obj.userData.noOutline === true;
-        const shouldOutline = (isVase || isPedestal) && !hasNoOutline;
-        return shouldOutline;
-      });
-
+  const setOutlineObjects = useCallback(
+    (objects: THREE.Object3D[]) => {
       console.log(
-        "[setOutlineObjects] Filtered objects to outline:",
-        filteredObjects.map(
+        "[setOutlineObjects] Received objects:",
+        objects.map(
           (o) => `${o.name || o.type} (ID: ${o.uuid.substring(0, 6)})`
         )
       );
+      if (outlinePassRef.current) {
+        const filteredObjects = objects.filter((obj) => {
+          const isVase =
+            obj.name === "Amfora" ||
+            obj.name === "Krater" ||
+            obj.name === "Hydria";
+          // More general check for pedestals: Check if it's a Group and contains any Mesh
+          // (Assumes pedestals are Groups and vases are Meshes directly passed)
+          const isPedestal =
+            obj instanceof THREE.Group &&
+            obj.children.some((child) => child instanceof THREE.Mesh);
 
-      outlinePassRef.current.selectedObjects = filteredObjects;
-      outlinePassRef.current.edgeStrength = 5.0;
-      outlinePassRef.current.edgeGlow = 1.0;
-      outlinePassRef.current.edgeThickness = 2.0;
-      outlinePassRef.current.pulsePeriod = 0;
-      outlinePassRef.current.visibleEdgeColor.set(0x333333);
-      outlinePassRef.current.hiddenEdgeColor.set(0x333333);
-      console.log("[setOutlineObjects] OutlinePass updated.");
-    } else {
-      console.warn("[setOutlineObjects] outlinePassRef.current is null!");
-    }
-  }, []);
+          const hasNoOutline = obj.userData.noOutline === true;
+          const shouldOutline = (isVase || isPedestal) && !hasNoOutline;
+
+          // Log the decision for each object
+          // console.log(`Object: ${obj.name || obj.type} (ID: ${obj.uuid.substring(0,6)}) - isVase: ${isVase}, isPedestal: ${isPedestal}, hasNoOutline: ${hasNoOutline} => shouldOutline: ${shouldOutline}`);
+
+          return shouldOutline;
+        });
+
+        console.log(
+          "[setOutlineObjects] Filtered objects to outline:",
+          filteredObjects.map(
+            (o) => `${o.name || o.type} (ID: ${o.uuid.substring(0, 6)})`
+          )
+        );
+
+        outlinePassRef.current.selectedObjects = filteredObjects;
+        console.log("[setOutlineObjects] OutlinePass selectedObjects updated.");
+      } else {
+        console.warn("[setOutlineObjects] outlinePassRef.current is null!");
+      }
+    },
+    [outlinePassRef]
+  );
 
   useEffect(() => {
     if (!mountRef.current) {

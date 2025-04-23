@@ -15,6 +15,8 @@
   margin: 0;
   padding: 0;
   height: 100%;
+
+  --leva-sizes-rootWidth: 350px !important;
 }
 
 html {
@@ -81,4 +83,19 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* Leva panel width adjustment */
+/* Variables might not work reliably depending on Leva's style loading */
+/*
+:root {
+  --leva-sizes-controlWidth: 100px;
+  --leva-sizes-rootWidth: 380px;
+}
+*/
+
+/* Use a more specific selector */
+div[data-testid="leva-root"] > div {
+  /* Target the immediate child div which seems to control width */
+  width: 380px !important;
 }

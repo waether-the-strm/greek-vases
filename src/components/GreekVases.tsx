@@ -5,7 +5,7 @@ import { useVaseManager } from "../hooks/useVaseManager";
 import { useSceneSetup } from "../hooks/useSceneSetup";
 import { useShardManager } from "../hooks/useShardManager";
 import { useGalleryLoader } from "../hooks/useGalleryLoader";
-import { useControls, folder } from "leva";
+import { useControls, folder, button, levaStore } from "leva";
 import {
   ACESFilmicToneMapping,
   LinearToneMapping,
@@ -13,6 +13,7 @@ import {
   CineonToneMapping,
   NoToneMapping,
 } from "three";
+import yaml from "js-yaml";
 
 export const GreekVases = () => {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -102,12 +103,59 @@ export const GreekVases = () => {
     sceneRef,
   });
 
+  // Extract the export logic handler (can stay outside)
+  const handleExportClick = useCallback(() => {
+    console.log("Exporting settings using levaStore.getData()...");
+    const allData = levaStore.getData();
+    console.log("Raw leva store data:", JSON.stringify(allData, null, 2));
+    const valuesToExport: { [key: string]: any } = {};
+    Object.keys(allData).forEach((key) => {
+      const entry = allData[key];
+      if (
+        entry &&
+        typeof entry === "object" &&
+        !(entry instanceof Element) &&
+        "value" in entry &&
+        typeof entry.value !== "function"
+      ) {
+        const exportKey = entry.label || key;
+        // @ts-expect-error - Linter struggles with levaStore type, but runtime works
+        valuesToExport[exportKey] = entry.value;
+      }
+    });
+    console.log(
+      "Filtered values for export:",
+      JSON.stringify(valuesToExport, null, 2)
+    );
+    if (Object.keys(valuesToExport).length === 0) {
+      console.error(
+        "No settings found to export after filtering levaStore data."
+      );
+      return;
+    }
+    try {
+      const yamlString = yaml.dump(valuesToExport, { indent: 2 });
+      navigator.clipboard
+        .writeText(yamlString)
+        .then(() => {
+          console.log("Settings copied to clipboard as YAML!");
+        })
+        .catch((err) => {
+          console.error("Failed to copy settings to clipboard:", err);
+        });
+    } catch (e) {
+      console.error("Failed to convert settings to YAML:", e);
+    }
+  }, []); // No dependencies needed as it uses levaStore directly
+
   // --- Leva Debug Panel Controls ---
-  useControls(
+  // Revert to single useControls call, define schema inline
+  // Get the get function
+  const [_, get] = useControls(
     () => ({
       Renderer: folder({
-        toneMapping: {
-          value: rendererRef.current?.toneMapping ?? ACESFilmicToneMapping,
+        "Tone Mapping": {
+          value: ACESFilmicToneMapping,
           options: {
             None: NoToneMapping,
             Linear: LinearToneMapping,
@@ -119,8 +167,8 @@ export const GreekVases = () => {
             if (rendererRef.current) rendererRef.current.toneMapping = v;
           },
         },
-        toneMappingExposure: {
-          value: rendererRef.current?.toneMappingExposure ?? 0.2,
+        Exposure: {
+          value: 0.0,
           min: 0,
           max: 2,
           step: 0.01,
@@ -129,8 +177,8 @@ export const GreekVases = () => {
               rendererRef.current.toneMappingExposure = v;
           },
         },
-        "Environment Intensity": {
-          value: sceneRef.current?.environmentIntensity ?? 1.0,
+        "Env Intensity": {
+          value: 0.16,
           min: 0,
           max: 2,
           step: 0.01,
@@ -138,11 +186,8 @@ export const GreekVases = () => {
             if (sceneRef.current) sceneRef.current.environmentIntensity = v;
           },
         },
-        "Background Color": {
-          value:
-            sceneRef.current?.background instanceof THREE.Color
-              ? `#${sceneRef.current.background.getHexString()}`
-              : "#e6f3ff", // Default hex if background is not a Color
+        Background: {
+          value: "#125da3",
           onChange: (v) => {
             if (sceneRef.current) {
               // Ensure we set a Color object if the input changes
@@ -156,7 +201,7 @@ export const GreekVases = () => {
       }),
       Lights: folder({
         "Ambient Intensity": {
-          value: ambientLightRef.current?.intensity ?? 0.3,
+          value: 1.46,
           min: 0,
           max: 2,
           step: 0.01,
@@ -165,15 +210,13 @@ export const GreekVases = () => {
           },
         },
         "Ambient Color": {
-          value: `#${
-            ambientLightRef.current?.color.getHexString() ?? "ffffff"
-          }`,
+          value: "#265cff",
           onChange: (v) => {
             if (ambientLightRef.current) ambientLightRef.current.color.set(v);
           },
         },
-        "Hemisphere Intensity": {
-          value: hemisphereLightRef.current?.intensity ?? 0.2,
+        "Hemi Intensity": {
+          value: 0.31,
           min: 0,
           max: 2,
           step: 0.01,
@@ -182,26 +225,22 @@ export const GreekVases = () => {
               hemisphereLightRef.current.intensity = v;
           },
         },
-        "Hemisphere Sky Color": {
-          value: `#${
-            hemisphereLightRef.current?.color.getHexString() ?? "ffffff"
-          }`,
+        "Hemi Sky Color": {
+          value: "#902c2c",
           onChange: (v) => {
             if (hemisphereLightRef.current)
               hemisphereLightRef.current.color.set(v);
           },
         },
-        "Hemisphere Ground Color": {
-          value: `#${
-            hemisphereLightRef.current?.groundColor.getHexString() ?? "ffffff"
-          }`,
+        "Hemi Ground Color": {
+          value: "#803232",
           onChange: (v) => {
             if (hemisphereLightRef.current)
               hemisphereLightRef.current.groundColor.set(v);
           },
         },
         "Main Dir Intensity": {
-          value: mainDirectionalLightRef.current?.intensity ?? 0.3,
+          value: 0.33,
           min: 0,
           max: 2,
           step: 0.01,
@@ -211,16 +250,14 @@ export const GreekVases = () => {
           },
         },
         "Main Dir Color": {
-          value: `#${
-            mainDirectionalLightRef.current?.color.getHexString() ?? "ffffff"
-          }`,
+          value: "#6750b4",
           onChange: (v) => {
             if (mainDirectionalLightRef.current)
               mainDirectionalLightRef.current.color.set(v);
           },
         },
         "Main Dir Shadow Bias": {
-          value: mainDirectionalLightRef.current?.shadow.bias ?? -0.0005,
+          value: -0.0,
           min: -0.01,
           max: 0.01,
           step: 0.0001,
@@ -230,7 +267,7 @@ export const GreekVases = () => {
           },
         },
         "Main Dir Shadow Radius": {
-          value: mainDirectionalLightRef.current?.shadow.radius ?? 8,
+          value: 1.8,
           min: 0,
           max: 20,
           step: 0.1,
@@ -240,7 +277,7 @@ export const GreekVases = () => {
           },
         },
         "Gallery Dir Intensity": {
-          value: galleryDirectionalLightRef.current?.intensity ?? 0.4,
+          value: 0.41,
           min: 0,
           max: 2,
           step: 0.01,
@@ -250,16 +287,14 @@ export const GreekVases = () => {
           },
         },
         "Gallery Dir Color": {
-          value: `#${
-            galleryDirectionalLightRef.current?.color.getHexString() ?? "ffffff"
-          }`,
+          value: "#ff9821",
           onChange: (v) => {
             if (galleryDirectionalLightRef.current)
               galleryDirectionalLightRef.current.color.set(v);
           },
         },
         "Gallery Dir Shadow Bias": {
-          value: galleryDirectionalLightRef.current?.shadow.bias ?? -0.0005,
+          value: 0.01,
           min: -0.01,
           max: 0.01,
           step: 0.0001,
@@ -269,7 +304,7 @@ export const GreekVases = () => {
           },
         },
         "Gallery Dir Shadow Radius": {
-          value: galleryDirectionalLightRef.current?.shadow.radius ?? 8,
+          value: 12.5,
           min: 0,
           max: 20,
           step: 0.1,
@@ -281,7 +316,7 @@ export const GreekVases = () => {
       }),
       "Post-Processing": folder({
         "Outline Strength": {
-          value: outlinePassRef.current?.edgeStrength ?? 5.0,
+          value: 7.8,
           min: 0,
           max: 10,
           step: 0.1,
@@ -290,7 +325,7 @@ export const GreekVases = () => {
           },
         },
         "Outline Thickness": {
-          value: outlinePassRef.current?.edgeThickness ?? 2.0,
+          value: 0.7,
           min: 0,
           max: 4,
           step: 0.1,
@@ -300,7 +335,7 @@ export const GreekVases = () => {
           },
         },
         "Outline Glow": {
-          value: outlinePassRef.current?.edgeGlow ?? 1.0,
+          value: 0.92,
           min: 0,
           max: 1,
           step: 0.01,
@@ -309,42 +344,40 @@ export const GreekVases = () => {
           },
         },
         "Outline Visible Color": {
-          value: `#${
-            outlinePassRef.current?.visibleEdgeColor.getHexString() ?? "000000"
-          }`,
+          value: "#feff8c",
           onChange: (v) => {
             if (outlinePassRef.current)
               outlinePassRef.current.visibleEdgeColor.set(v);
           },
         },
         "Outline Hidden Color": {
-          value: `#${
-            outlinePassRef.current?.hiddenEdgeColor.getHexString() ?? "000000"
-          }`,
+          value: "#ff8d3d",
           onChange: (v) => {
             if (outlinePassRef.current)
               outlinePassRef.current.hiddenEdgeColor.set(v);
           },
         },
         "Enable FXAA": {
-          value: fxaaPassRef.current?.enabled ?? false,
+          value: true,
           onChange: (v) => {
             if (fxaaPassRef.current) fxaaPassRef.current.enabled = v;
           },
         },
       }),
+      " ": folder({
+        "Copy Settings (YAML)": button(handleExportClick),
+      }),
     }),
-    // Dependencies: Remove .current dependencies, rely on refs inside onChange
+    // Dependencies
     [
-      // Keep refs themselves if needed, or leave empty if leva handles it
-      // rendererRef,
-      // sceneRef,
-      // ambientLightRef,
-      // hemisphereLightRef,
-      // mainDirectionalLightRef,
-      // galleryDirectionalLightRef,
-      // outlinePassRef,
-      // fxaaPassRef,
+      rendererRef,
+      sceneRef,
+      ambientLightRef,
+      hemisphereLightRef,
+      mainDirectionalLightRef,
+      galleryDirectionalLightRef,
+      outlinePassRef,
+      fxaaPassRef,
     ]
   );
   // --- End Leva Controls ---
