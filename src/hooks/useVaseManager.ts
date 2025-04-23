@@ -143,7 +143,11 @@ export const useVaseManager = ({
 
   // Function to handle vase breaking logic
   const handleVaseClick = useCallback(() => {
-    if (!isPointerLocked || !cameraRef.current || !sceneRef.current) return;
+    // Log when the function is called
+    // console.log("handleVaseClick called"); // Remove log
+
+    if (!cameraRef.current || !sceneRef.current) return;
+    // Removed isPointerLocked check - tap detection handles activation
 
     raycasterRef.current.setFromCamera(new THREE.Vector2(), cameraRef.current);
     const intersects = raycasterRef.current.intersectObjects(
@@ -195,7 +199,7 @@ export const useVaseManager = ({
         }
       }
     }
-  }, [isPointerLocked, cameraRef, sceneRef]); // Dependencies for the click handler
+  }, [cameraRef, sceneRef]); // Dependencies for the click handler
 
   return {
     brokenVasesCount,
