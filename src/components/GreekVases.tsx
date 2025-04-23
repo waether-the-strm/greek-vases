@@ -14,6 +14,7 @@ import {
   NoToneMapping,
 } from "three";
 import yaml from "js-yaml";
+import initialSettingsFromJson from "../config/sceneSettings.json";
 
 export const GreekVases = () => {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -48,12 +49,13 @@ export const GreekVases = () => {
     cameraHeight: 3,
   });
 
-  // Get refs from gallery loader
+  // Get refs from gallery loader, including RectAreaLight
   const {
     galleryModel,
     windowPane,
     backgroundPlane,
     galleryDirectionalLightRef,
+    rectAreaLightRef,
   } = useGalleryLoader({
     sceneRef,
     initializationStatus,
@@ -101,34 +103,10 @@ export const GreekVases = () => {
     sceneRef,
   });
 
-  // Define initial settings based on previous YAML export
-  const initialSettings = {
-    "Tone Mapping": 4, // Assuming ACESFilmic was index 4 or corresponds to THREE constant
-    Exposure: 0.17,
-    "Env Intensity": 0.05,
-    Background: "#125da3",
-    "Ambient Intensity": 0.8899999999999999,
-    "Ambient Color": "#265cff",
-    "Hemi Intensity": 1.4400000000000002,
-    "Hemi Sky Color": "#902c2c",
-    "Hemi Ground Color": "#803232",
-    "Main Dir Intensity": 0.08000000000000002,
-    "Main Dir Color": "#6750b4",
-    "Main Dir Shadow Bias": -0.0026000000000000003,
-    "Main Dir Shadow Radius": 7.3,
-    "Gallery Dir Intensity": 1.11,
-    "Gallery Dir Color": "#e8810c",
-    "Gallery Dir Shadow Bias": -0.0031000000000000003,
-    "Gallery Dir Shadow Radius": 0.8999999999999986,
-    "Outline Strength": 7.8,
-    "Outline Thickness": 0.7,
-    "Outline Glow": 0.92,
-    "Outline Visible Color": "#feff8c",
-    "Outline Hidden Color": "#ff8d3d",
-    "Enable FXAA": true,
-  };
+  // Use imported settings directly (cast type if needed, though direct import should work)
+  const initialSettings = initialSettingsFromJson as { [key: string]: any };
 
-  // Extract the export logic handler (can stay outside)
+  // Extract the export logic handler
   const handleExportClick = useCallback(() => {
     console.log("Exporting settings using levaStore.getData()...");
     const allData = levaStore.getData();
@@ -171,15 +149,14 @@ export const GreekVases = () => {
     } catch (e) {
       console.error("Failed to convert settings to YAML:", e);
     }
-  }, []); // No dependencies needed as it uses levaStore directly
+  }, []);
 
   // --- Leva Debug Panel Controls ---
-  // Remove unused 'get' and 'set' from destructuring
-  useControls(
+  const [_, get] = useControls(
     () => ({
       Renderer: folder({
         "Tone Mapping": {
-          value: initialSettings["Tone Mapping"], // Use value from initialSettings
+          value: initialSettings["Tone Mapping"],
           options: {
             None: NoToneMapping,
             Linear: LinearToneMapping,
@@ -192,7 +169,7 @@ export const GreekVases = () => {
           },
         },
         Exposure: {
-          value: initialSettings["Exposure"], // Use value from initialSettings
+          value: initialSettings["Exposure"],
           min: 0,
           max: 2,
           step: 0.01,
@@ -202,7 +179,7 @@ export const GreekVases = () => {
           },
         },
         "Env Intensity": {
-          value: initialSettings["Env Intensity"], // Use value from initialSettings
+          value: initialSettings["Env Intensity"],
           min: 0,
           max: 2,
           step: 0.01,
@@ -211,7 +188,7 @@ export const GreekVases = () => {
           },
         },
         Background: {
-          value: initialSettings["Background"], // Use value from initialSettings
+          value: initialSettings["Background"],
           onChange: (v) => {
             if (sceneRef.current) {
               // Ensure we set a Color object if the input changes
@@ -269,15 +246,29 @@ export const GreekVases = () => {
           max: 2,
           step: 0.01,
           onChange: (v) => {
+            console.log(`[Leva Change] Main Dir Intensity: ${v}`);
             if (mainDirectionalLightRef.current)
               mainDirectionalLightRef.current.intensity = v;
+            if (rectAreaLightRef.current) {
+              rectAreaLightRef.current.intensity = v * 15;
+              console.log(
+                `[Leva Change] RectAreaLight Intensity set to: ${rectAreaLightRef.current.intensity}`
+              );
+            }
           },
         },
         "Main Dir Color": {
           value: initialSettings["Main Dir Color"],
           onChange: (v) => {
+            console.log(`[Leva Change] Main Dir Color: ${v}`);
             if (mainDirectionalLightRef.current)
               mainDirectionalLightRef.current.color.set(v);
+            if (rectAreaLightRef.current) {
+              rectAreaLightRef.current.color.set(v);
+              console.log(
+                `[Leva Change] RectAreaLight Color set to: #${rectAreaLightRef.current.color.getHexString()}`
+              );
+            }
           },
         },
         "Main Dir Shadow Bias": {
@@ -402,24 +393,26 @@ export const GreekVases = () => {
       galleryDirectionalLightRef,
       outlinePassRef,
       fxaaPassRef,
+      rectAreaLightRef,
     ]
   );
   // --- End Leva Controls ---
 
   // Effect to apply initial settings directly to Three.js objects after mount
   useEffect(() => {
-    // Ensure all refs are populated before applying settings
     if (
       rendererRef.current &&
       sceneRef.current &&
       ambientLightRef.current &&
       hemisphereLightRef.current &&
       mainDirectionalLightRef.current &&
-      // galleryDirectionalLightRef might be null initially, handle it
       outlinePassRef.current &&
-      fxaaPassRef.current
+      fxaaPassRef.current &&
+      rectAreaLightRef.current
     ) {
-      console.log("Applying initialSettings directly to Three.js objects...");
+      console.log(
+        "Applying initialSettings from JSON directly to Three.js objects..."
+      );
 
       const renderer = rendererRef.current;
       const scene = sceneRef.current;
@@ -428,8 +421,8 @@ export const GreekVases = () => {
       const mainDirLight = mainDirectionalLightRef.current;
       const outlinePass = outlinePassRef.current;
       const fxaaPass = fxaaPassRef.current;
+      const rectAreaLight = rectAreaLightRef.current;
 
-      // Apply Renderer settings
       renderer.toneMapping = ACESFilmicToneMapping;
       renderer.toneMappingExposure = initialSettings["Exposure"];
       scene.environmentIntensity = initialSettings["Env Intensity"];
@@ -439,7 +432,6 @@ export const GreekVases = () => {
         scene.background = new THREE.Color(initialSettings["Background"]);
       }
 
-      // Apply Light settings
       ambientLight.intensity = initialSettings["Ambient Intensity"];
       ambientLight.color.set(initialSettings["Ambient Color"]);
       hemisphereLight.intensity = initialSettings["Hemi Intensity"];
@@ -450,7 +442,6 @@ export const GreekVases = () => {
       mainDirLight.shadow.bias = initialSettings["Main Dir Shadow Bias"];
       mainDirLight.shadow.radius = initialSettings["Main Dir Shadow Radius"];
 
-      // Apply Gallery Light settings (if available)
       if (galleryDirectionalLightRef.current) {
         const galleryDirLight = galleryDirectionalLightRef.current;
         galleryDirLight.intensity = initialSettings["Gallery Dir Intensity"];
@@ -461,7 +452,16 @@ export const GreekVases = () => {
           initialSettings["Gallery Dir Shadow Radius"];
       }
 
-      // Apply Post-Processing settings
+      if (rectAreaLight && mainDirLight) {
+        console.log(
+          "Applying initial settings to RectAreaLight:",
+          initialSettings["Main Dir Intensity"],
+          initialSettings["Main Dir Color"]
+        );
+        rectAreaLight.intensity = initialSettings["Main Dir Intensity"] * 15;
+        rectAreaLight.color.set(initialSettings["Main Dir Color"]);
+      }
+
       outlinePass.edgeStrength = initialSettings["Outline Strength"];
       outlinePass.edgeThickness = initialSettings["Outline Thickness"];
       outlinePass.edgeGlow = initialSettings["Outline Glow"];
@@ -473,16 +473,16 @@ export const GreekVases = () => {
 
       console.log("Initial settings applied directly to Three.js objects.");
     }
-    // Dependency array ensures this runs once when all primary refs are ready
   }, [
     rendererRef.current,
     sceneRef.current,
     ambientLightRef.current,
     hemisphereLightRef.current,
     mainDirectionalLightRef.current,
-    galleryDirectionalLightRef.current, // Include gallery light ref
+    galleryDirectionalLightRef.current,
     outlinePassRef.current,
     fxaaPassRef.current,
+    rectAreaLightRef.current,
   ]);
 
   // Add gallery objects to the scene imperatively when they are loaded
@@ -511,12 +511,14 @@ export const GreekVases = () => {
     });
 
     const lightToAdd = galleryDirectionalLightRef.current;
+    const rectLightToAdd = rectAreaLightRef.current;
 
     const objectsToAdd: (THREE.Object3D | null)[] = [
       galleryModel,
       windowPane,
       backgroundPlane,
       lightToAdd,
+      rectLightToAdd,
     ];
 
     objectsToAdd.forEach((obj) => {
@@ -539,6 +541,9 @@ export const GreekVases = () => {
             } else {
               console.log(`Light target for ${obj.name} already in scene.`);
             }
+          }
+          if (obj === rectLightToAdd) {
+            console.log("ADDED RectAreaLight to scene:", obj);
           }
         } else {
           console.log(
@@ -598,6 +603,7 @@ export const GreekVases = () => {
     windowPane,
     backgroundPlane,
     galleryDirectionalLightRef,
+    rectAreaLightRef,
   ]);
 
   // Pointer Lock Handlers

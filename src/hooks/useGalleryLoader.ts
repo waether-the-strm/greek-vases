@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { RectAreaLight } from "three/src/lights/RectAreaLight.js";
 
 // Import the asset URLs using Vite's ?url feature
 import galleryModelUrl from "/assets/uploads_files_2797881_AircraftHangarCarGarage.glb?url";
@@ -18,6 +19,7 @@ interface GalleryLoaderResult {
   windowPane: THREE.Mesh | null;
   backgroundPlane: THREE.Mesh | null;
   galleryDirectionalLightRef: React.RefObject<THREE.DirectionalLight | null>;
+  rectAreaLightRef: React.RefObject<RectAreaLight | null>;
 }
 
 const updateMaterials = (model: THREE.Object3D) => {
@@ -47,6 +49,7 @@ export const useGalleryLoader = ({
   const galleryDirectionalLightRef = useRef<THREE.DirectionalLight | null>(
     null
   );
+  const rectAreaLightRef = useRef<RectAreaLight | null>(null);
   const modelLoadedRef = useRef(false);
 
   useEffect(() => {
@@ -93,7 +96,13 @@ export const useGalleryLoader = ({
         modelLoadedRef.current = true;
 
         console.log("Creating window pane...");
-        const windowGeometry = new THREE.PlaneGeometry(35, 12);
+        const windowWidth = 35;
+        const windowHeight = 12;
+        const windowPosition = new THREE.Vector3(0, 5, 20.5);
+        const windowGeometry = new THREE.PlaneGeometry(
+          windowWidth,
+          windowHeight
+        );
         const windowTexture = textureLoader.load(
           windowTextureUrl,
           () => console.log("Window texture loaded."),
@@ -103,18 +112,38 @@ export const useGalleryLoader = ({
         const windowMaterial = new THREE.MeshBasicMaterial({
           map: windowTexture,
           transparent: true,
-          alphaTest: 0.1,
           side: THREE.DoubleSide,
-          opacity: 1.0,
+          color: 0xffffff,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
         });
         const createdWindowPane = new THREE.Mesh(
           windowGeometry,
           windowMaterial
         );
         createdWindowPane.name = "WindowPane";
-        createdWindowPane.position.set(0, 5, 20.5);
+        createdWindowPane.position.copy(windowPosition);
         console.log("Setting window pane state...");
         setWindowPane(createdWindowPane);
+
+        console.log("Creating RectAreaLight...");
+        const createdRectAreaLight = new RectAreaLight(
+          0xffffff,
+          1,
+          windowWidth * 0.95,
+          windowHeight * 0.95
+        );
+        createdRectAreaLight.name = "WindowRectAreaLight";
+        createdRectAreaLight.position.copy(windowPosition);
+        createdRectAreaLight.lookAt(
+          windowPosition.x,
+          windowPosition.y - 1,
+          windowPosition.z - 5
+        );
+        if (isMounted) {
+          rectAreaLightRef.current = createdRectAreaLight;
+          console.log("RectAreaLight ref set:", rectAreaLightRef.current);
+        }
 
         console.log("Creating background plane...");
         const backgroundGeometry = new THREE.PlaneGeometry(40, 15);
@@ -188,5 +217,6 @@ export const useGalleryLoader = ({
     windowPane,
     backgroundPlane,
     galleryDirectionalLightRef,
+    rectAreaLightRef,
   };
 };

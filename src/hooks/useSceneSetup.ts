@@ -7,6 +7,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
+import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
 
 interface SceneSetupProps {
   mountRef: React.RefObject<HTMLDivElement>;
@@ -203,6 +204,9 @@ export const useSceneSetup = ({
         return () => {};
       }
       rendererRef.current = renderer;
+
+      // Call RectAreaLight init
+      RectAreaLightUniformsLib.init();
 
       const environment = new RoomEnvironment();
       const pmremGenerator = new THREE.PMREMGenerator(renderer);
