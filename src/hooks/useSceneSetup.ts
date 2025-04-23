@@ -49,6 +49,32 @@ const setupFloor = (scene: THREE.Scene) => {
   return floor;
 };
 
+// Helper function to create measurement markers
+const setupMeasurementHelpers = (scene: THREE.Scene) => {
+  const markers = [];
+  const markerGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+  const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Red markers
+  const range = 20; // How far out to place markers
+  const step = 5; // Distance between markers
+
+  for (let i = -range; i <= range; i += step) {
+    if (i === 0) continue; // Skip origin
+    // X-axis markers
+    const markerX = new THREE.Mesh(markerGeometry, markerMaterial);
+    markerX.position.set(i, 0.1, 0);
+    scene.add(markerX);
+    markers.push(markerX);
+
+    // Z-axis markers
+    const markerZ = new THREE.Mesh(markerGeometry, markerMaterial);
+    markerZ.position.set(0, 0.1, i);
+    scene.add(markerZ);
+    markers.push(markerZ);
+  }
+  console.log(`Added ${markers.length} measurement markers.`);
+  return markers;
+};
+
 export const useSceneSetup = ({ mountRef, cameraHeight }: SceneSetupProps) => {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -95,7 +121,8 @@ export const useSceneSetup = ({ mountRef, cameraHeight }: SceneSetupProps) => {
 
     // Setup environment elements
     const lights = setupLights(scene);
-    const floor = setupFloor(scene); // Add floor setup again
+    const floor = setupFloor(scene);
+    const measurementMarkers = setupMeasurementHelpers(scene);
 
     // Basic resize handling within the setup hook
     const handleResize = () => {
@@ -127,6 +154,12 @@ export const useSceneSetup = ({ mountRef, cameraHeight }: SceneSetupProps) => {
           floor.material.dispose();
         }
       }
+      // Cleanup markers
+      measurementMarkers.forEach((marker) => {
+        scene.remove(marker);
+        marker.geometry.dispose();
+        // Material is shared, dispose only once if needed, but MeshBasicMaterial is cheap
+      });
 
       // Cleanup environment map and generator
       if (environmentTextureRef.current) {
