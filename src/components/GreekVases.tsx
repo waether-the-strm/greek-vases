@@ -1,14 +1,10 @@
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import * as THREE from "three";
 import { usePlayerControls } from "../hooks/usePlayerControls";
 import { useVaseManager } from "../hooks/useVaseManager";
 import { useSceneSetup } from "../hooks/useSceneSetup";
 import { useShardManager } from "../hooks/useShardManager";
 import { useGalleryLoader } from "../hooks/useGalleryLoader";
-import { useFrame, useThree } from "@react-three/fiber";
-import * as THREE from "three";
-// Remove empty import block
-// import {
-// } from "../features/greek-vases/threeUtils";
 
 const GreekVases = () => {
   const mountRef = useRef<HTMLDivElement>(null);

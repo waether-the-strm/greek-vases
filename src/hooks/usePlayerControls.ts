@@ -4,6 +4,9 @@ import * as THREE from "three";
 // Define jump strength and gravity constants
 const JUMP_STRENGTH = 0.18;
 const GRAVITY = 0.007;
+// Touch sensitivity and threshold
+const TOUCH_ROTATE_SENSITIVITY = 0.005;
+const TOUCH_MOVE_THRESHOLD = 20; // Pixels threshold to initiate move
 
 export interface PlayerState {
   position: THREE.Vector3;
@@ -40,32 +43,44 @@ export const usePlayerControls = ({
     isOnGround: false, // Start assuming not on ground initially
   });
 
+  // Refs for touch state
+  const touchActiveRef = useRef(false);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
   // Event Handlers memoized with useCallback
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    const player = playerStateRef.current;
-    switch (event.code) {
-      case "KeyW":
-        player.moveForward = true;
-        break;
-      case "KeyS":
-        player.moveBackward = true;
-        break;
-      case "KeyA":
-        player.moveLeft = true;
-        break;
-      case "KeyD":
-        player.moveRight = true;
-        break;
-      case "Space": // Handle jump
-        if (player.isOnGround) {
-          player.velocity.y = JUMP_STRENGTH;
-          player.isOnGround = false;
-        }
-        break;
-    }
-  }, []); // No dependencies needed here as it only modifies the ref
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      // Allow keyboard controls only if pointer is not locked (or for specific keys like ESC maybe)
+      // Or adjust logic based on whether touch is active
+      if (!isPointerLocked && event.key !== "Escape") return; // Basic check, might need refinement
+
+      const player = playerStateRef.current;
+      switch (event.code) {
+        case "KeyW":
+          player.moveForward = true;
+          break;
+        case "KeyS":
+          player.moveBackward = true;
+          break;
+        case "KeyA":
+          player.moveLeft = true;
+          break;
+        case "KeyD":
+          player.moveRight = true;
+          break;
+        case "Space": // Handle jump
+          if (player.isOnGround) {
+            player.velocity.y = JUMP_STRENGTH;
+            player.isOnGround = false;
+          }
+          break;
+      }
+    },
+    [isPointerLocked]
+  ); // Depend on isPointerLocked
 
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
+    // Always allow key up events to stop movement
     switch (event.code) {
       case "KeyW":
         playerStateRef.current.moveForward = false;
@@ -84,7 +99,9 @@ export const usePlayerControls = ({
 
   const handleMouseMove = useCallback(
     (event: MouseEvent) => {
-      if (!isPointerLocked || !cameraRef.current) return;
+      // Only allow mouse move if pointer is locked (desktop experience)
+      if (!isPointerLocked || !cameraRef.current || touchActiveRef.current)
+        return;
 
       const movementX = event.movementX || 0;
       const movementY = event.movementY || 0;
@@ -101,8 +118,91 @@ export const usePlayerControls = ({
       // Apply rotation to the camera
       cameraRef.current.rotation.copy(playerStateRef.current.rotation);
     },
-    [isPointerLocked, cameraRef]
+    [isPointerLocked, cameraRef] // touchActiveRef is implicitly handled by the check
   );
+
+  // --- Touch Event Handlers ---
+  const handleTouchStart = useCallback(
+    (event: TouchEvent) => {
+      // Don't handle touch if pointer is locked (desktop mode)
+      if (isPointerLocked) return;
+      // Use only the first touch
+      if (event.touches.length === 1) {
+        event.preventDefault(); // Prevent scrolling/zooming
+        touchActiveRef.current = true;
+        touchStartRef.current = {
+          x: event.touches[0].clientX,
+          y: event.touches[0].clientY,
+        };
+        // Reset movement flags on new touch start
+        playerStateRef.current.moveForward = false;
+        playerStateRef.current.moveBackward = false;
+      }
+    },
+    [isPointerLocked]
+  );
+
+  const handleTouchMove = useCallback(
+    (event: TouchEvent) => {
+      // Don't handle touch if pointer is locked or no active touch
+      if (
+        isPointerLocked ||
+        !touchActiveRef.current ||
+        !touchStartRef.current ||
+        !cameraRef.current
+      )
+        return;
+
+      if (event.touches.length === 1) {
+        event.preventDefault(); // Prevent scrolling/zooming
+        const touch = event.touches[0];
+        const deltaX = touch.clientX - touchStartRef.current.x;
+        const deltaY = touch.clientY - touchStartRef.current.y;
+
+        // --- Rotation (Horizontal Drag) ---
+        playerStateRef.current.rotation.y -= deltaX * TOUCH_ROTATE_SENSITIVITY;
+        // Note: We are not handling vertical rotation via touch for simplicity,
+        // but could be added using deltaY similar to mouse look if desired.
+        // playerStateRef.current.rotation.x -= deltaY * TOUCH_ROTATE_SENSITIVITY * 0.5; // Example
+        // Clamp vertical rotation if added
+        // playerStateRef.current.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, playerStateRef.current.rotation.x));
+
+        cameraRef.current.rotation.copy(playerStateRef.current.rotation);
+
+        // --- Movement (Vertical Drag) ---
+        if (deltaY < -TOUCH_MOVE_THRESHOLD) {
+          // Swipe Up -> Move Forward
+          playerStateRef.current.moveForward = true;
+          playerStateRef.current.moveBackward = false;
+        } else if (deltaY > TOUCH_MOVE_THRESHOLD) {
+          // Swipe Down -> Move Backward
+          playerStateRef.current.moveForward = false;
+          playerStateRef.current.moveBackward = true;
+        } else {
+          // Within threshold -> No vertical movement
+          playerStateRef.current.moveForward = false;
+          playerStateRef.current.moveBackward = false;
+        }
+
+        // Update start position for continuous movement/rotation calculation relative to the last point
+        touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+      }
+    },
+    [isPointerLocked, cameraRef]
+  ); // Depend on isPointerLocked and cameraRef
+
+  const handleTouchEnd = useCallback((event: TouchEvent) => {
+    // Only handle if a touch was active
+    if (touchActiveRef.current) {
+      // Prevent default only if we actually handled the touch sequence
+      event.preventDefault();
+      touchActiveRef.current = false;
+      touchStartRef.current = null;
+      // Stop movement when touch ends
+      playerStateRef.current.moveForward = false;
+      playerStateRef.current.moveBackward = false;
+    }
+  }, []); // No dependencies needed
 
   // Function to update player position based on state
   const updatePlayerPosition = useCallback(() => {
@@ -113,9 +213,9 @@ export const usePlayerControls = ({
     const velocity = player.velocity; // Use velocity from state
     const direction = new THREE.Vector3();
 
-    // Horizontal movement direction
+    // Horizontal movement direction (Includes touch forward/backward)
     direction.z = Number(player.moveBackward) - Number(player.moveForward);
-    direction.x = Number(player.moveRight) - Number(player.moveLeft);
+    direction.x = Number(player.moveRight) - Number(player.moveLeft); // Keep keyboard side movement
     direction.normalize();
 
     const moveSpeed = 0.1;
@@ -126,6 +226,7 @@ export const usePlayerControls = ({
     );
 
     // Apply rotation to horizontal movement direction
+    // Rotation is updated by both mouse and touch handlers now
     const euler = new THREE.Euler(0, player.rotation.y, 0, "YXZ");
     const moveDirection = horizontalVelocity.applyEuler(euler);
 
@@ -155,12 +256,6 @@ export const usePlayerControls = ({
     if (nextPositionZ >= bounds.zMin && nextPositionZ <= bounds.zMax) {
       camera.position.z = nextPositionZ;
     }
-    // Note: This simple boundary check prevents sliding.
-    // To re-enable sliding, separate the checks like before:
-    // let allowedMoveX = nextPositionX >= bounds.xMin && nextPositionX <= bounds.xMax;
-    // let allowedMoveZ = nextPositionZ >= bounds.zMin && nextPositionZ <= bounds.zMax;
-    // if (allowedMoveX) { camera.position.x += moveDirection.x; }
-    // if (allowedMoveZ) { camera.position.z += moveDirection.z; }
 
     // Update player state position
     player.position.copy(camera.position);
@@ -168,21 +263,42 @@ export const usePlayerControls = ({
 
   // Effect to attach and detach event listeners
   useEffect(() => {
+    // Keyboard and Mouse listeners
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     window.addEventListener("mousemove", handleMouseMove);
 
+    // Touch listeners - use { passive: false } for preventDefault()
+    // Attach to window for simplicity, could be attached to the canvas element
+    window.addEventListener("touchstart", handleTouchStart, { passive: false });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleTouchEnd, { passive: false });
+    window.addEventListener("touchcancel", handleTouchEnd, { passive: false }); // Handle cancellation too
+
     return () => {
+      // Keyboard and Mouse cleanup
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("mousemove", handleMouseMove);
+      // Touch cleanup
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener("touchcancel", handleTouchEnd);
     };
-  }, [handleKeyDown, handleKeyUp, handleMouseMove]);
+    // Add touch handlers to dependency array
+  }, [
+    handleKeyDown,
+    handleKeyUp,
+    handleMouseMove,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  ]);
 
   // Return necessary values/functions for the component to use
   return {
     playerStateRef, // Expose the ref if direct access needed elsewhere
     updatePlayerPosition, // Expose the update function for the animation loop
-    // The handlers are managed internally by the hook via useEffect
   };
 };

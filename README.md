@@ -4,8 +4,11 @@ An interactive 3D gallery of Greek vases built with React, Three.js, and Vite.
 
 ## Features
 
-- Interactive 3D environment with lighting and shadows
+- Loaded 3D gallery model (hangar) providing the environment context.
 - Several types of procedurally generated Greek vases on pedestals
+- Window pane with texture enhancing the gallery feel.
+- Background plane behind the window with a parallax effect for depth.
+- Dynamic directional lighting originating from the window area, casting shadows.
 - First-Person Shooter (FPS) style navigation (WASD + Mouse look)
 - Ability to break vases by clicking on them
 - Physics simulation for falling shards
@@ -59,6 +62,7 @@ npm run build
 
 - `src/components/GreekVases.tsx`: Main React component integrating the 3D scene and UI.
 - `src/hooks/`: Contains custom React hooks encapsulating specific logic domains (scene setup, player controls, vase management, shard physics).
+- `src/hooks/useGalleryLoader.ts`: Hook responsible for loading the main gallery GLB model and related elements (window, background, light).
 - `src/features/greek-vases/threeUtils.ts`: Utility functions specific to Three.js object creation for this feature.
 - `src/App.tsx`: Root application component.
 - `src/App.css`, `src/index.css`: Global styles and UI element styling.

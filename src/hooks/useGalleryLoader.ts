@@ -165,8 +165,8 @@ export const useGalleryLoader = ({
         // scene.add(shadowCameraHelper);
         // --- End Directional Light ---
       },
-      (xhr) => {
-        // Optional: Loading progress
+      () => {
+        // Optional: Loading progress - parameter xhr removed as unused
         // console.log((xhr.loaded / xhr.total * 100) + '% loaded');
       },
       (error) => {
