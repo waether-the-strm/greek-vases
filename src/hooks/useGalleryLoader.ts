@@ -1,7 +1,6 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 
 // Import the asset URLs using Vite's ?url feature
 import galleryModelUrl from "/assets/uploads_files_2797881_AircraftHangarCarGarage.glb?url";
@@ -10,7 +9,6 @@ import backgroundTextureUrl from "/assets/background_view2.jpg?url"; // Import b
 
 interface GalleryLoaderProps {
   sceneRef: React.RefObject<THREE.Scene>;
-  setOutlineObjects: (objects: THREE.Object3D[]) => void;
   initializationStatus: "pending" | "ready";
 }
 
@@ -39,7 +37,6 @@ const updateMaterials = (model: THREE.Object3D) => {
 
 export const useGalleryLoader = ({
   sceneRef,
-  setOutlineObjects,
   initializationStatus,
 }: GalleryLoaderProps): GalleryLoaderResult => {
   const [galleryModel, setGalleryModel] = useState<THREE.Group | null>(null);
@@ -67,7 +64,6 @@ export const useGalleryLoader = ({
     }
     console.log("useGalleryLoader useEffect running (scene is ready)...");
 
-    const scene = sceneRef.current;
     const loader = new GLTFLoader();
     const textureLoader = new THREE.TextureLoader();
 

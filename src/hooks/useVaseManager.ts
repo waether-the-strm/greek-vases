@@ -1,20 +1,10 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import * as THREE from "three";
 import {
   createPedestal,
   createVaseOnPedestal,
   playBreakSound,
 } from "../features/greek-vases/threeUtils";
-
-// Define the pastel color palette (for pedestals)
-const pastelPalette = [
-  0xffb3ba, // light pink
-  0xffdfba, // light peach
-  0xffffba, // light yellow
-  0xbaffc9, // light green
-  0xbae1ff, // light blue
-  0xe0bbe4, // light purple
-];
 
 // Define types for clarity
 // Update BrokenVaseInfo to use shardColor
@@ -26,7 +16,6 @@ interface BrokenVaseInfo {
 interface VaseManagerProps {
   sceneRef: React.RefObject<THREE.Scene | null>;
   cameraRef: React.RefObject<THREE.PerspectiveCamera | null>;
-  isPointerLocked: boolean;
   initialBrokenVases?: number;
   onVasesCreated?: () => void;
 }
@@ -83,7 +72,6 @@ const applyPastelToPedestal = (pedestal: THREE.Group, vase: THREE.Mesh) => {
 export const useVaseManager = ({
   sceneRef,
   cameraRef,
-  isPointerLocked,
   initialBrokenVases = 0,
   onVasesCreated,
 }: VaseManagerProps): VaseManagerResult => {

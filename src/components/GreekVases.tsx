@@ -48,7 +48,7 @@ export const GreekVases = () => {
     cameraHeight: 3,
   });
 
-  // Poprawiono destrukturyzację - galleryModel jest z useGalleryLoader
+  // Get refs from gallery loader
   const {
     galleryModel,
     windowPane,
@@ -56,7 +56,6 @@ export const GreekVases = () => {
     galleryDirectionalLightRef,
   } = useGalleryLoader({
     sceneRef,
-    setOutlineObjects,
     initializationStatus,
   });
 
@@ -67,7 +66,6 @@ export const GreekVases = () => {
     useVaseManager({
       sceneRef,
       cameraRef,
-      isPointerLocked: isPointerLockedRef.current,
       onVasesCreated: () => {
         if (initializationStatus === "ready" && setOutlineObjects) {
           const objectsToOutline = [
@@ -176,8 +174,8 @@ export const GreekVases = () => {
   }, []); // No dependencies needed as it uses levaStore directly
 
   // --- Leva Debug Panel Controls ---
-  // Get the set function from useControls
-  const [_, get, set] = useControls(
+  // Remove unused 'get' and 'set' from destructuring
+  useControls(
     () => ({
       Renderer: folder({
         "Tone Mapping": {
