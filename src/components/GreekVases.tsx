@@ -10,6 +10,7 @@ const GreekVases = () => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [cameraHeight] = useState(2.5);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
+  const [isTouchControlActive, setIsTouchControlActive] = useState(false);
 
   // Setup scene, camera, renderer using the hook
   const { sceneRef, cameraRef, rendererRef } = useSceneSetup({
@@ -25,7 +26,30 @@ const GreekVases = () => {
   // Store initial background position for parallax
   const initialBackgroundPosition = useRef<THREE.Vector3 | null>(null);
 
-  // Add returned objects to the scene imperatively when they are loaded
+  // Initialize Vase Manager FIRST to get handleVaseClick
+  const { brokenVasesCount, handleVaseClick, setOnVaseBrokenCallback } =
+    useVaseManager({
+      sceneRef,
+      cameraRef,
+      isPointerLocked,
+    });
+
+  // Initialize Player Controls SECOND, passing handleVaseClick
+  const { updatePlayerPosition, joystickCenter, joystickRadius } =
+    usePlayerControls({
+      isPointerLocked,
+      cameraRef,
+      cameraHeight,
+      setIsTouchControlActive,
+      handleVaseClick, // Pass the vase click handler
+    });
+
+  // Initialize Shard Manager
+  const { createShards, updateShards, cleanupShards } = useShardManager({
+    sceneRef,
+  });
+
+  // Add gallery objects to the scene imperatively when they are loaded
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
@@ -68,33 +92,6 @@ const GreekVases = () => {
     };
   }, [sceneRef, windowPane, backgroundPlane, directionalLight]); // Rerun when objects are loaded
 
-  // Pass refs from useSceneSetup to other hooks
-  const { updatePlayerPosition } = usePlayerControls({
-    isPointerLocked,
-    cameraRef,
-    cameraHeight,
-  });
-
-  // Shard Manager Hook - Needs sceneRef
-  const { createShards, updateShards, cleanupShards } = useShardManager({
-    sceneRef,
-  });
-
-  // Vase Manager Hook - Needs sceneRef, cameraRef, and setOnVaseBrokenCallback now uses createShards
-  const { brokenVasesCount, handleVaseClick, setOnVaseBrokenCallback } =
-    useVaseManager({
-      sceneRef,
-      cameraRef,
-      isPointerLocked,
-    });
-
-  // Connect Vase Manager break event to Shard Manager creation
-  useEffect(() => {
-    setOnVaseBrokenCallback(createShards);
-    // Cleanup callback connection if component unmounts or deps change
-    return () => setOnVaseBrokenCallback(() => {});
-  }, [setOnVaseBrokenCallback, createShards]);
-
   // Pointer Lock Handlers
   const handlePointerLockChange = useCallback(() => {
     setIsPointerLocked(document.pointerLockElement === mountRef.current);
@@ -112,12 +109,16 @@ const GreekVases = () => {
     const renderer = rendererRef.current;
     const camera = cameraRef.current;
 
-    // Click handler for pointer lock and vase breaking
+    // Click handler for pointer lock (DESKTOP ONLY)
     const combinedMouseClickHandler = () => {
-      if (!isPointerLocked) {
-        mountRef.current?.requestPointerLock();
-      } else {
-        handleVaseClick();
+      // Only handle clicks if touch is NOT active (i.e., on desktop)
+      if (!isTouchControlActive) {
+        if (!isPointerLocked) {
+          mountRef.current?.requestPointerLock();
+        } else {
+          // Call handleVaseClick directly ONLY when pointer is locked
+          handleVaseClick();
+        }
       }
     };
 
@@ -147,7 +148,9 @@ const GreekVases = () => {
       }
       // --- End Parallax ---
 
-      if (isPointerLocked) {
+      // Update player position if pointer is locked (desktop) OR touch control is active (state)
+      if (isPointerLocked || isTouchControlActive) {
+        // Remove temporary log
         updatePlayerPosition();
       }
 
@@ -156,13 +159,14 @@ const GreekVases = () => {
     }
     animate();
 
-    // Event Listeners
+    // Event Listeners - Click listener is now only for desktop
     window.addEventListener("click", combinedMouseClickHandler);
     document.addEventListener("pointerlockchange", handlePointerLockChange);
     document.addEventListener("pointerlockerror", handlePointerLockError);
 
     // Cleanup
     return () => {
+      // Remove desktop click listener
       window.removeEventListener("click", combinedMouseClickHandler);
       document.removeEventListener(
         "pointerlockchange",
@@ -177,10 +181,11 @@ const GreekVases = () => {
     };
   }, [
     isPointerLocked,
+    isTouchControlActive,
     handlePointerLockChange,
     handlePointerLockError,
     updatePlayerPosition,
-    handleVaseClick,
+    handleVaseClick, // Ensure handleVaseClick is listed explicitly
     sceneRef,
     cameraRef,
     rendererRef,
@@ -188,6 +193,13 @@ const GreekVases = () => {
     cleanupShards,
     backgroundPlane,
   ]);
+
+  // Connect Vase Manager break event to Shard Manager creation
+  useEffect(() => {
+    setOnVaseBrokenCallback(createShards);
+    // Cleanup callback connection if component unmounts or deps change
+    return () => setOnVaseBrokenCallback(() => {});
+  }, [setOnVaseBrokenCallback, createShards]);
 
   return (
     <div
@@ -197,7 +209,8 @@ const GreekVases = () => {
         height: "100vh",
         position: "relative",
         overflow: "hidden",
-        background: "#000", // Consider moving styles to CSS
+        background: "#000",
+        touchAction: "none", // Add this to prevent default touch behaviors
       }}
     >
       <div
@@ -234,8 +247,30 @@ const GreekVases = () => {
         data-testid="crosshair"
       />
 
-      {/* New Instruction Text - Visible only when pointer is not locked */}
-      {!isPointerLocked && (
+      {/* Joystick Visual Indicator - Render only when touch active and geometry available */}
+      {isTouchControlActive && joystickCenter && joystickRadius > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            left: `${joystickCenter.x}px`,
+            top: `${joystickCenter.y}px`,
+            width: `${joystickRadius * 2}px`, // Diameter
+            height: `${joystickRadius * 2}px`, // Diameter
+            borderRadius: "50%",
+            // Change border to thin, dark, semi-transparent
+            border: "1px dotted rgba(0, 0, 0, 0.3)",
+            // Keep background slightly visible and blurred
+            backgroundColor: "rgba(255, 255, 255, 0.05)",
+            backdropFilter: "blur(3px)",
+            transform: "translate(-50%, -50%)", // Center the circle on the coordinates
+            pointerEvents: "none", // Make it non-interactive
+          }}
+          data-testid="joystick-area"
+        />
+      )}
+
+      {/* New Instruction Text - Visible only if pointer is NOT locked AND touch control is NOT active (using state) */}
+      {!isPointerLocked && !isTouchControlActive && (
         <div className="instruction-overlay" data-testid="instruction-overlay">
           Kliknij, aby rozpocząć
         </div>
