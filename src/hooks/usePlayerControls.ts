@@ -6,7 +6,7 @@ const JUMP_STRENGTH = 0.18;
 const GRAVITY = 0.007;
 // Touch sensitivity and threshold
 const TOUCH_ROTATE_SENSITIVITY = 0.005;
-const TOUCH_MOVE_THRESHOLD = 20; // Pixels threshold to initiate move (used for tap vs drag, not joystick speed)
+//const TOUCH_MOVE_THRESHOLD = 20; // Pixels threshold to initiate move (used for tap vs drag, not joystick speed)
 const MOVE_SPEED = 0.15; // Reduced speed from 0.3
 const JOYSTICK_ROTATE_SENSITIVITY = 0.001; // Sensitivity for rotation while using joystick
 
@@ -49,7 +49,7 @@ export const usePlayerControls = ({
   const playerStateRef = useRef<PlayerState>({
     position: initialPosition.clone(),
     velocity: new THREE.Vector3(),
-    rotation: new THREE.Euler(0, Math.PI, 0, "YXZ"),
+    rotation: new THREE.Euler(0, 0, 0, "YXZ"),
     moveForward: false,
     moveBackward: false,
     moveLeft: false,
@@ -234,13 +234,6 @@ export const usePlayerControls = ({
 
   const handleTouchMove = useCallback(
     (event: TouchEvent) => {
-      // console.log("Touch move event received", { // Remove log
-      //   isPointerLocked,
-      //   touchActive: touchActiveRef.current,
-      //   // isTouchControlActive: isTouchControlActiveRef.current, // Removed ref check
-      //   hasStartRef: !!touchStartRef.current
-      // });
-
       // Don't handle touch if pointer is locked or no active touch
       if (
         isPointerLocked ||
@@ -269,9 +262,6 @@ export const usePlayerControls = ({
           const joyY = touch.clientY - joystickCenter!.y; // Y is inverted on screen vs 3D
           const distance = Math.sqrt(joyX * joyX + joyY * joyY);
           const radius = joystickRadius; // Use state value
-
-          let moveX = 0;
-          let moveZ = 0; // Z corresponds to Y on the joystick screen
 
           if (distance > 0) {
             // Avoid division by zero
@@ -348,50 +338,36 @@ export const usePlayerControls = ({
     [isPointerLocked, cameraRef, joystickCenter, joystickRadius]
   );
 
-  const handleTouchEnd = useCallback(
-    (event: TouchEvent) => {
-      // console.log("Touch end event received", { // Remove log
-      //   touchActive: touchActiveRef.current,
-      //   // isTouchControlActive: isTouchControlActiveRef.current // Removed ref check
-      // });
+  const handleTouchEnd = useCallback(() => {
+    // Only handle if a touch was active
+    if (touchActiveRef.current) {
+      // Only prevent default if we are sure it wasn't a tap potentially
+      // event.preventDefault();
 
-      // Only handle if a touch was active
-      if (touchActiveRef.current) {
-        // Only prevent default if we are sure it wasn't a tap potentially
-        // event.preventDefault();
+      const touchEndTime = Date.now();
+      const touchDuration = touchEndTime - touchStartTimeRef.current;
 
-        const touchEndTime = Date.now();
-        const touchDuration = touchEndTime - touchStartTimeRef.current;
-
-        // Log tap detection values
-        console.log("Tap Check:", {
-          duration: touchDuration,
-          moved: touchMovedRef.current,
-        });
-
-        // Check for tap: short duration and no significant movement
-        if (touchDuration < 200 && !touchMovedRef.current) {
-          // console.log("Tap detected! Calling handleVaseClick..."); // Remove log
-          handleVaseClick(); // Call the passed handler for vase breaking
-        } else {
-          // console.log("Drag / Long Press detected, stopping movement."); // Remove log
-          // If it wasn't a tap, ensure movement flags/vector stops on touch end
-          playerStateRef.current.moveForward = false;
-          playerStateRef.current.moveBackward = false;
-          playerStateRef.current.moveLeft = false; // Also reset side movement just in case
-          playerStateRef.current.moveRight = false;
-          joystickMoveVectorRef.current.set(0, 0); // Reset joystick vector
-        }
-
-        touchActiveRef.current = false;
-        touchStartRef.current = null;
-        touchInitialPosRef.current = null; // Clear initial pos ref
-        touchMovedRef.current = false;
-        isJoystickTouchRef.current = false; // Reset joystick touch flag
+      // Check for tap: short duration and no significant movement
+      if (touchDuration < 200 && !touchMovedRef.current) {
+        // console.log("Tap detected! Calling handleVaseClick..."); // Remove log
+        handleVaseClick(); // Call the passed handler for vase breaking
+      } else {
+        // console.log("Drag / Long Press detected, stopping movement."); // Remove log
+        // If it wasn't a tap, ensure movement flags/vector stops on touch end
+        playerStateRef.current.moveForward = false;
+        playerStateRef.current.moveBackward = false;
+        playerStateRef.current.moveLeft = false; // Also reset side movement just in case
+        playerStateRef.current.moveRight = false;
+        joystickMoveVectorRef.current.set(0, 0); // Reset joystick vector
       }
-    },
-    [handleVaseClick]
-  );
+
+      touchActiveRef.current = false;
+      touchStartRef.current = null;
+      touchInitialPosRef.current = null; // Clear initial pos ref
+      touchMovedRef.current = false;
+      isJoystickTouchRef.current = false; // Reset joystick touch flag
+    }
+  }, [handleVaseClick]);
 
   // Function to update player position based on state
   const updatePlayerPosition = useCallback(() => {
