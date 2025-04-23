@@ -30,6 +30,27 @@ interface VaseManagerProps {
   initialBrokenVases?: number;
 }
 
+// --- Function to Apply Pastel Colors to Pedestals (Moved Before Loop) ---
+const applyPastelToPedestal = (
+  pedestal: THREE.Group,
+  vaseToIgnore: THREE.Mesh
+) => {
+  const color = pastelPalette[Math.floor(Math.random() * pastelPalette.length)];
+  pedestal.traverse((child) => {
+    // Check if child is a Mesh, NOT the specific vase to ignore, and has a single material
+    if (
+      child instanceof THREE.Mesh &&
+      child !== vaseToIgnore && // <<< CHANGE: Compare directly with the vase object
+      child.material &&
+      !Array.isArray(child.material)
+    ) {
+      // Assuming pedestal material is MeshStandardMaterial or similar
+      (child.material as THREE.MeshStandardMaterial).color.set(color);
+    }
+  });
+};
+// --- End Function Definition ---
+
 export const useVaseManager = ({
   sceneRef,
   cameraRef,
@@ -70,29 +91,25 @@ export const useVaseManager = ({
       scene.add(rightPedestal);
       newPedestals.push(leftPedestal, rightPedestal);
 
-      // Create vases using the original function call (NO COLOR CHANGE HERE)
+      // Create vases using the original function call
       const leftVase = createVaseOnPedestal(leftPedestal, -5, i * 2);
       const rightVase = createVaseOnPedestal(rightPedestal, 5, i * 2);
 
-      // --- Apply pastel colors to PEDESTALS ---
-      const applyPastelToPedestal = (pedestal: THREE.Group) => {
-        const color =
-          pastelPalette[Math.floor(Math.random() * pastelPalette.length)];
-        pedestal.traverse((child) => {
-          if (
-            child instanceof THREE.Mesh &&
-            child.material &&
-            !Array.isArray(child.material)
-          ) {
-            // Assuming pedestal material is MeshStandardMaterial or similar
-            (child.material as THREE.MeshStandardMaterial).color.set(color);
-          }
-        });
-      };
+      // Apply pastel colors to PEDESTALS, ignoring the specific vase
+      if (leftVase) applyPastelToPedestal(leftPedestal, leftVase);
+      if (rightVase) applyPastelToPedestal(rightPedestal, rightVase);
 
-      applyPastelToPedestal(leftPedestal);
-      applyPastelToPedestal(rightPedestal);
-      // --- End applying colors to pedestals ---
+      // --- Adjust Vase Material Properties ---
+      const adjustVaseMaterial = (vase: THREE.Mesh) => {
+        if (vase.material && !Array.isArray(vase.material)) {
+          const material = vase.material as THREE.MeshStandardMaterial;
+          material.roughness = 0.9; // More matte
+          material.metalness = 0.1; // Less metallic
+        }
+      };
+      if (leftVase) adjustVaseMaterial(leftVase);
+      if (rightVase) adjustVaseMaterial(rightVase);
+      // --- End Adjust Vase Material ---
 
       newVases.push(leftVase, rightVase);
     }

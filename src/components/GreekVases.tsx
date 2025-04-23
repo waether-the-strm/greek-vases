@@ -42,6 +42,11 @@ const GreekVases = () => {
 
     objectsToAdd.forEach((obj) => {
       if (obj) {
+        // If directional light, increase intensity before adding
+        if (obj instanceof THREE.DirectionalLight) {
+          obj.intensity = 2.0; // Increased intensity
+        }
+
         scene.add(obj);
         // If directional light, also add its target if not already parented
         if (obj instanceof THREE.DirectionalLight && !obj.target.parent) {

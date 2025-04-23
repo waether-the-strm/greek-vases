@@ -126,7 +126,7 @@ export const useSceneSetup = ({ mountRef, cameraHeight }: SceneSetupProps) => {
     const floor = setupFloor(scene);
 
     // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
     // OrbitControls for debugging/alternative view
