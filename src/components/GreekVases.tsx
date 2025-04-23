@@ -6,6 +6,13 @@ import { useSceneSetup } from "../hooks/useSceneSetup";
 import { useShardManager } from "../hooks/useShardManager";
 import { useGalleryLoader } from "../hooks/useGalleryLoader";
 import { useControls, folder } from "leva";
+import {
+  ACESFilmicToneMapping,
+  LinearToneMapping,
+  ReinhardToneMapping,
+  CineonToneMapping,
+  NoToneMapping,
+} from "three";
 
 export const GreekVases = () => {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -99,6 +106,19 @@ export const GreekVases = () => {
   useControls(
     () => ({
       Renderer: folder({
+        toneMapping: {
+          value: rendererRef.current?.toneMapping ?? ACESFilmicToneMapping,
+          options: {
+            None: NoToneMapping,
+            Linear: LinearToneMapping,
+            Reinhard: ReinhardToneMapping,
+            Cineon: CineonToneMapping,
+            ACESFilmic: ACESFilmicToneMapping,
+          },
+          onChange: (v) => {
+            if (rendererRef.current) rendererRef.current.toneMapping = v;
+          },
+        },
         toneMappingExposure: {
           value: rendererRef.current?.toneMappingExposure ?? 0.2,
           min: 0,
@@ -107,6 +127,30 @@ export const GreekVases = () => {
           onChange: (v) => {
             if (rendererRef.current)
               rendererRef.current.toneMappingExposure = v;
+          },
+        },
+        "Environment Intensity": {
+          value: sceneRef.current?.environmentIntensity ?? 1.0,
+          min: 0,
+          max: 2,
+          step: 0.01,
+          onChange: (v) => {
+            if (sceneRef.current) sceneRef.current.environmentIntensity = v;
+          },
+        },
+        "Background Color": {
+          value:
+            sceneRef.current?.background instanceof THREE.Color
+              ? `#${sceneRef.current.background.getHexString()}`
+              : "#e6f3ff", // Default hex if background is not a Color
+          onChange: (v) => {
+            if (sceneRef.current) {
+              // Ensure we set a Color object if the input changes
+              if (!(sceneRef.current.background instanceof THREE.Color)) {
+                sceneRef.current.background = new THREE.Color();
+              }
+              sceneRef.current.background.set(v);
+            }
           },
         },
       }),
@@ -175,6 +219,26 @@ export const GreekVases = () => {
               mainDirectionalLightRef.current.color.set(v);
           },
         },
+        "Main Dir Shadow Bias": {
+          value: mainDirectionalLightRef.current?.shadow.bias ?? -0.0005,
+          min: -0.01,
+          max: 0.01,
+          step: 0.0001,
+          onChange: (v) => {
+            if (mainDirectionalLightRef.current)
+              mainDirectionalLightRef.current.shadow.bias = v;
+          },
+        },
+        "Main Dir Shadow Radius": {
+          value: mainDirectionalLightRef.current?.shadow.radius ?? 8,
+          min: 0,
+          max: 20,
+          step: 0.1,
+          onChange: (v) => {
+            if (mainDirectionalLightRef.current)
+              mainDirectionalLightRef.current.shadow.radius = v;
+          },
+        },
         "Gallery Dir Intensity": {
           value: galleryDirectionalLightRef.current?.intensity ?? 0.4,
           min: 0,
@@ -192,6 +256,26 @@ export const GreekVases = () => {
           onChange: (v) => {
             if (galleryDirectionalLightRef.current)
               galleryDirectionalLightRef.current.color.set(v);
+          },
+        },
+        "Gallery Dir Shadow Bias": {
+          value: galleryDirectionalLightRef.current?.shadow.bias ?? -0.0005,
+          min: -0.01,
+          max: 0.01,
+          step: 0.0001,
+          onChange: (v) => {
+            if (galleryDirectionalLightRef.current)
+              galleryDirectionalLightRef.current.shadow.bias = v;
+          },
+        },
+        "Gallery Dir Shadow Radius": {
+          value: galleryDirectionalLightRef.current?.shadow.radius ?? 8,
+          min: 0,
+          max: 20,
+          step: 0.1,
+          onChange: (v) => {
+            if (galleryDirectionalLightRef.current)
+              galleryDirectionalLightRef.current.shadow.radius = v;
           },
         },
       }),
@@ -250,15 +334,17 @@ export const GreekVases = () => {
         },
       }),
     }),
-    // Dependencies: re-run useControls if refs become available
+    // Dependencies: Remove .current dependencies, rely on refs inside onChange
     [
-      rendererRef.current,
-      ambientLightRef.current,
-      hemisphereLightRef.current,
-      mainDirectionalLightRef.current,
-      galleryDirectionalLightRef.current,
-      outlinePassRef.current,
-      fxaaPassRef.current,
+      // Keep refs themselves if needed, or leave empty if leva handles it
+      // rendererRef,
+      // sceneRef,
+      // ambientLightRef,
+      // hemisphereLightRef,
+      // mainDirectionalLightRef,
+      // galleryDirectionalLightRef,
+      // outlinePassRef,
+      // fxaaPassRef,
     ]
   );
   // --- End Leva Controls ---
