@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
@@ -10,6 +10,11 @@ import backgroundTextureUrl from "/assets/background_view2.jpg?url"; // Import b
 interface GalleryLoaderProps {
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
   onLoad?: (model: THREE.Group) => void; // Optional callback after model is loaded
+  isLightMode: boolean;
+  textureRefs: React.MutableRefObject<{
+    windowTexture: THREE.Texture | null;
+    backgroundTexture: THREE.Texture | null;
+  }>;
 }
 
 // Define the return type of the hook
@@ -23,8 +28,9 @@ interface GalleryLoaderResult {
 export const useGalleryLoader = ({
   sceneRef,
   onLoad,
+  isLightMode,
+  textureRefs,
 }: GalleryLoaderProps): GalleryLoaderResult => {
-  // Use state to store the created objects to be returned
   const [galleryModel, setGalleryModel] = useState<THREE.Group | null>(null);
   const [windowPane, setWindowPane] = useState<THREE.Mesh | null>(null);
   const [backgroundPlane, setBackgroundPlane] = useState<THREE.Mesh | null>(
@@ -32,143 +38,159 @@ export const useGalleryLoader = ({
   );
   const [directionalLight, setDirectionalLight] =
     useState<THREE.DirectionalLight | null>(null);
+  const modelLoadedRef = useRef(false);
+
+  // Function to update materials
+  const updateMaterials = useCallback(
+    (model: THREE.Group, _scene: THREE.Scene, isLight: boolean) => {
+      const galleryParts: THREE.Mesh[] = [];
+      model.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          if (
+            child.name.toLowerCase().includes("wall") ||
+            child.name.toLowerCase().includes("ceiling") ||
+            child.name.toLowerCase().includes("floor")
+          ) {
+            galleryParts.push(child);
+          }
+        }
+      });
+
+      model.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          child.frustumCulled = false;
+
+          if (child.material && !Array.isArray(child.material)) {
+            const oldMaterial = child.material as THREE.MeshStandardMaterial;
+            const isGalleryPart = galleryParts.includes(child);
+
+            const baseColor = isGalleryPart
+              ? isLight
+                ? 0xc8e3ff
+                : 0x1a2a3f
+              : isLight
+              ? oldMaterial.color.getHex()
+              : oldMaterial.color.getHex() * 0.3;
+
+            const standardMaterial = new THREE.MeshStandardMaterial({
+              color: baseColor,
+              map: oldMaterial.map,
+              roughness: 0.1,
+              metalness: 0.0,
+              flatShading: true,
+            });
+
+            if (oldMaterial.dispose) {
+              oldMaterial.dispose();
+            }
+
+            child.material = standardMaterial;
+
+            if (child.geometry) {
+              child.geometry.computeVertexNormals();
+            }
+          }
+        }
+      });
+    },
+    []
+  );
 
   useEffect(() => {
-    if (!sceneRef.current) return;
+    if (!sceneRef.current || modelLoadedRef.current) return;
 
     const scene = sceneRef.current;
     const loader = new GLTFLoader();
-    const textureLoader = new THREE.TextureLoader(); // Reuse texture loader
+    const textureLoader = new THREE.TextureLoader();
 
-    // Keep track if the component is still mounted
     let isMounted = true;
+
+    // Load textures first if they don't exist
+    if (!textureRefs.current.windowTexture) {
+      const windowTexture = textureLoader.load(windowTextureUrl);
+      windowTexture.colorSpace = THREE.SRGBColorSpace;
+      textureRefs.current.windowTexture = windowTexture;
+    }
+
+    if (!textureRefs.current.backgroundTexture) {
+      const backgroundTexture = textureLoader.load(backgroundTextureUrl);
+      backgroundTexture.colorSpace = THREE.SRGBColorSpace;
+      textureRefs.current.backgroundTexture = backgroundTexture;
+    }
 
     loader.load(
       galleryModelUrl,
       (gltf) => {
-        if (!isMounted) return; // Don't process if unmounted
+        if (!isMounted) return;
 
         const loadedGalleryModel = gltf.scene;
-
-        // Optional: Adjust model scale, position, rotation if needed
-        loadedGalleryModel.scale.set(0.02, 0.02, 0.02); // Scale down further
+        loadedGalleryModel.scale.set(0.02, 0.02, 0.02);
         loadedGalleryModel.position.set(0, 1.7, 0);
-        // loadedGalleryModel.rotation.y = Math.PI; // Example rotation
 
-        // Enable shadows and disable frustum culling for all meshes
-        loadedGalleryModel.traverse((child) => {
-          // Check if child is a Mesh before accessing material/shadow properties
-          if (child instanceof THREE.Mesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-            child.frustumCulled = false;
-            // Apply base pastel color to hangar materials
-            if (child.material && !Array.isArray(child.material)) {
-              // Assuming MeshStandardMaterial or similar with a color property
-              (child.material as THREE.MeshStandardMaterial).color.set(
-                0xbae1ff
-              ); // Light blue
-              // Optional: Adjust other material properties if needed
-              // (child.material as THREE.MeshStandardMaterial).roughness = 0.9;
-            }
-            // Optional: Adjust materials if needed (Example was envMapIntensity)
-            // if (child.material && !Array.isArray(child.material)) { // Ensure check here too
-            //   ((child.material as THREE.MeshStandardMaterial).envMapIntensity = 0.5;
-          }
-        });
+        updateMaterials(loadedGalleryModel, scene, isLightMode);
 
         scene.add(loadedGalleryModel);
-        setGalleryModel(loadedGalleryModel); // Store gallery model in state
-        console.log("Gallery model loaded and added to scene.");
-        console.log(
-          "Gallery parent UUID:",
-          loadedGalleryModel.parent?.uuid,
-          "Scene UUID:",
-          scene.uuid
-        ); // Log parent UUID
+        setGalleryModel(loadedGalleryModel);
+        modelLoadedRef.current = true;
 
         if (onLoad) {
-          onLoad(loadedGalleryModel); // Call the callback if provided
+          onLoad(loadedGalleryModel);
         }
 
-        // --- Add Window Plane ---
-        const windowGeometry = new THREE.PlaneGeometry(35, 12); // Increased size
-        const windowTexture = textureLoader.load(windowTextureUrl);
-        windowTexture.colorSpace = THREE.SRGBColorSpace; // Ensure correct color space if needed
-
+        // Window setup
+        const windowGeometry = new THREE.PlaneGeometry(35, 12);
         const windowMaterial = new THREE.MeshBasicMaterial({
-          // color: 0xddddff, // Color comes from texture now
-          map: windowTexture, // Apply the texture
-          transparent: true, // Enable transparency
-          alphaTest: 0.1, // Adjust if needed for sharp alpha edges
+          map: textureRefs.current.windowTexture,
+          transparent: true,
+          alphaTest: 0.1,
           side: THREE.DoubleSide,
+          opacity: isLightMode ? 1.0 : 0.3,
         });
+
         const createdWindowPane = new THREE.Mesh(
           windowGeometry,
           windowMaterial
         );
         createdWindowPane.position.set(0, 5, 20.5);
-        // scene.add(createdWindowPane); // Don't add here, return it
-        setWindowPane(createdWindowPane); // Store window pane in state
-        console.log("Window plane created.");
-        // --- End Window Plane ---
+        setWindowPane(createdWindowPane);
 
-        // --- Add Background Plane ---
-        const backgroundGeometry = new THREE.PlaneGeometry(40, 15); // Slightly larger than window
-        const backgroundTexture = textureLoader.load(backgroundTextureUrl);
-        backgroundTexture.colorSpace = THREE.SRGBColorSpace;
-
+        // Background setup
+        const backgroundGeometry = new THREE.PlaneGeometry(40, 15);
         const backgroundMaterial = new THREE.MeshBasicMaterial({
-          map: backgroundTexture,
-          side: THREE.DoubleSide, // Visible from both sides just in case
+          map: textureRefs.current.backgroundTexture,
+          side: THREE.DoubleSide,
+          opacity: isLightMode ? 1.0 : 0.1,
+          transparent: true,
         });
+
         const createdBackgroundPlane = new THREE.Mesh(
           backgroundGeometry,
           backgroundMaterial
         );
-        // Position it slightly behind the window - initial position
         createdBackgroundPlane.position.set(0, 5, 21);
-        // scene.add(createdBackgroundPlane); // Don't add here, return it
-        setBackgroundPlane(createdBackgroundPlane); // Store background plane in state
-        console.log("Background plane created.");
-        // --- End Background Plane ---
+        setBackgroundPlane(createdBackgroundPlane);
 
-        // --- Add Directional Light from Window ---
+        // Light setup
         const createdDirectionalLight = new THREE.DirectionalLight(
-          0xffffff,
-          1.5
-        ); // White light, adjust intensity
-        createdDirectionalLight.position.set(0, 7, 25); // Experiment with position
-        createdDirectionalLight.target.position.set(0, 2, 0); // Target the center area where vases might be
-
+          isLightMode ? 0xffffff : 0x202020,
+          isLightMode ? 1.5 : 0.3
+        );
+        createdDirectionalLight.position.set(0, 7, 25);
+        createdDirectionalLight.target.position.set(0, 2, 0);
         createdDirectionalLight.castShadow = true;
-        // Configure shadow map
-        createdDirectionalLight.shadow.mapSize.width = 2048; // Higher resolution for sharper shadows
+        createdDirectionalLight.shadow.mapSize.width = 2048;
         createdDirectionalLight.shadow.mapSize.height = 2048;
         createdDirectionalLight.shadow.camera.near = 0.5;
         createdDirectionalLight.shadow.camera.far = 50;
-        // Optional: Adjust shadow camera frustum (left, right, top, bottom) if needed
         createdDirectionalLight.shadow.camera.left = -20;
         createdDirectionalLight.shadow.camera.right = 20;
         createdDirectionalLight.shadow.camera.top = 20;
         createdDirectionalLight.shadow.camera.bottom = -20;
-
-        // scene.add(createdDirectionalLight);
-        // scene.add(createdDirectionalLight.target); // Don't add target here explicitly if light is added later
-        setDirectionalLight(createdDirectionalLight); // Store light in state
-        console.log("Directional light created.");
-
-        // Optional: Add a helper to visualize the light's direction and shadow camera
-        // const lightHelper = new THREE.DirectionalLightHelper(createdDirectionalLight, 5);
-        // scene.add(lightHelper);
-        // const shadowCameraHelper = new THREE.CameraHelper(createdDirectionalLight.shadow.camera);
-        // scene.add(shadowCameraHelper);
-        // --- End Directional Light ---
+        setDirectionalLight(createdDirectionalLight);
       },
-      () => {
-        // Optional: Loading progress - parameter xhr removed as unused
-        // console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-      },
+      undefined,
       (error) => {
         if (isMounted) {
           console.error("Error loading gallery model:", error);
@@ -176,17 +198,55 @@ export const useGalleryLoader = ({
       }
     );
 
-    // Cleanup function
     return () => {
       isMounted = false;
-      // Optional: More specific cleanup if needed, e.g., disposing geometries/materials
-      // if (galleryModel) scene.remove(galleryModel); // Removal should happen in parent component now
-      // if (windowPane) scene.remove(windowPane);
-      // if (backgroundPlane) scene.remove(backgroundPlane);
-      // if (directionalLight) scene.remove(directionalLight);
     };
-  }, [sceneRef, onLoad]); // Dependency array
+  }, [sceneRef, isLightMode, updateMaterials, onLoad, textureRefs]);
 
-  // Return the created objects
+  // Effect to update materials when light mode changes
+  useEffect(() => {
+    if (!galleryModel || !sceneRef.current) return;
+    updateMaterials(galleryModel, sceneRef.current, isLightMode);
+
+    // Update window and background materials
+    if (windowPane?.material) {
+      const material = windowPane.material as THREE.MeshBasicMaterial;
+      material.opacity = isLightMode ? 1.0 : 0.3;
+      material.needsUpdate = true;
+    }
+    if (backgroundPlane?.material) {
+      const material = backgroundPlane.material as THREE.MeshBasicMaterial;
+      material.opacity = isLightMode ? 1.0 : 0.1;
+      material.needsUpdate = true;
+    }
+    if (directionalLight) {
+      directionalLight.color.setHex(isLightMode ? 0xffffff : 0x202020);
+      directionalLight.intensity = isLightMode ? 1.5 : 0.3;
+    }
+  }, [
+    isLightMode,
+    galleryModel,
+    windowPane,
+    backgroundPlane,
+    directionalLight,
+    updateMaterials,
+  ]);
+
+  const handleLightModeChange = useCallback(
+    (isLightMode: boolean) => {
+      if (windowPane?.material) {
+        const material = windowPane.material as THREE.MeshBasicMaterial;
+        material.opacity = isLightMode ? 1.0 : 0.3;
+        material.needsUpdate = true;
+      }
+      if (backgroundPlane?.material) {
+        const material = backgroundPlane.material as THREE.MeshBasicMaterial;
+        material.opacity = isLightMode ? 1.0 : 0.1;
+        material.needsUpdate = true;
+      }
+    },
+    [windowPane, backgroundPlane]
+  );
+
   return { galleryModel, windowPane, backgroundPlane, directionalLight };
 };
