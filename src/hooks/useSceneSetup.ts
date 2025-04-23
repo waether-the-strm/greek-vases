@@ -21,6 +21,12 @@ interface SceneSetupResult {
   composerRef: React.RefObject<EffectComposer | null>;
   setOutlineObjects: (objects: THREE.Object3D[]) => void;
   initializationStatus: "pending" | "ready";
+  // Refs for debug panel
+  outlinePassRef: React.RefObject<OutlinePass | null>;
+  fxaaPassRef: React.RefObject<ShaderPass | null>;
+  ambientLightRef: React.RefObject<THREE.AmbientLight | null>;
+  hemisphereLightRef: React.RefObject<THREE.HemisphereLight | null>;
+  mainDirectionalLightRef: React.RefObject<THREE.DirectionalLight | null>;
 }
 
 // Helper functions for environment setup (internal to the hook)
@@ -41,7 +47,24 @@ const setupLights = (scene: THREE.Scene) => {
   directionalLight.shadow.bias = -0.0005;
   scene.add(directionalLight);
 
-  return [directionalLight];
+  // Keep track of lights for cleanup (optional, good practice)
+  const lightsArray: THREE.Light[] = [directionalLight];
+
+  // Create other lights but return them individually for refs
+  const ambientLight = new THREE.AmbientLight(0xffefd5, 0.3);
+  scene.add(ambientLight);
+  lightsArray.push(ambientLight);
+
+  const hemisphereLight = new THREE.HemisphereLight(0xfff0e6, 0xffe4e1, 0.2);
+  scene.add(hemisphereLight);
+  lightsArray.push(hemisphereLight);
+
+  return {
+    directionalLight,
+    ambientLight,
+    hemisphereLight,
+    lightsArray, // For easy cleanup
+  };
 };
 
 // Reintroduce setupFloor function with PlaneGeometry
@@ -90,6 +113,11 @@ export const useSceneSetup = ({
   const composerRef = useRef<EffectComposer | null>(null);
   const outlinePassRef = useRef<OutlinePass | null>(null);
   const fxaaPassRef = useRef<ShaderPass | null>(null);
+  // Add refs for lights
+  const ambientLightRef = useRef<THREE.AmbientLight | null>(null);
+  const hemisphereLightRef = useRef<THREE.HemisphereLight | null>(null);
+  const mainDirectionalLightRef = useRef<THREE.DirectionalLight | null>(null);
+
   const controlsRef = useRef<OrbitControls | null>(null);
   const isInitializedRef = useRef(false);
   const cleanupFuncRef = useRef<(() => void) | null>(null);
@@ -132,8 +160,8 @@ export const useSceneSetup = ({
       outlinePassRef.current.edgeGlow = 1.0;
       outlinePassRef.current.edgeThickness = 2.0;
       outlinePassRef.current.pulsePeriod = 0;
-      outlinePassRef.current.visibleEdgeColor.set(0x000000);
-      outlinePassRef.current.hiddenEdgeColor.set(0x000000);
+      outlinePassRef.current.visibleEdgeColor.set(0x333333);
+      outlinePassRef.current.hiddenEdgeColor.set(0x333333);
       console.log("[setOutlineObjects] OutlinePass updated.");
     } else {
       console.warn("[setOutlineObjects] outlinePassRef.current is null!");
@@ -180,7 +208,7 @@ export const useSceneSetup = ({
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.4;
+      renderer.toneMappingExposure = 0.2;
       if (mountRef.current) {
         mountRef.current.appendChild(renderer.domElement);
       } else {
@@ -198,16 +226,14 @@ export const useSceneSetup = ({
       scene.environment = envTexture;
       environment.dispose();
 
-      const lights = setupLights(scene);
+      // Setup lights and assign to refs
+      const { directionalLight, ambientLight, hemisphereLight, lightsArray } =
+        setupLights(scene);
+      mainDirectionalLightRef.current = directionalLight;
+      ambientLightRef.current = ambientLight;
+      hemisphereLightRef.current = hemisphereLight;
+
       const floor = setupFloor(scene);
-      const ambientLight = new THREE.AmbientLight(0xffefd5, 0.6);
-      scene.add(ambientLight);
-      const hemisphereLight = new THREE.HemisphereLight(
-        0xfff0e6,
-        0xffe4e1,
-        0.4
-      );
-      scene.add(hemisphereLight);
 
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
@@ -299,15 +325,34 @@ export const useSceneSetup = ({
 
         if (sceneRef.current) {
           const scene = sceneRef.current;
-          lights.forEach((light) => {
-            if (light.target && light.target.parent) scene.remove(light.target);
+          // Use lightsArray for cleanup
+          lightsArray.forEach((light) => {
+            if (
+              light instanceof THREE.DirectionalLight &&
+              light.target &&
+              light.target.parent
+            ) {
+              scene.remove(light.target);
+            }
             scene.remove(light);
           });
           if (floor) {
             scene.remove(floor);
           }
-          scene.remove(ambientLight);
-          scene.remove(hemisphereLight);
+          // Remove lights explicitly just in case (belt and suspenders)
+          if (ambientLightRef.current) scene.remove(ambientLightRef.current);
+          if (hemisphereLightRef.current)
+            scene.remove(hemisphereLightRef.current);
+          if (mainDirectionalLightRef.current) {
+            if (
+              mainDirectionalLightRef.current.target &&
+              mainDirectionalLightRef.current.target.parent
+            ) {
+              scene.remove(mainDirectionalLightRef.current.target);
+            }
+            scene.remove(mainDirectionalLightRef.current);
+          }
+
           if (scene.environment) {
             scene.environment.dispose();
             scene.environment = null;
@@ -415,5 +460,11 @@ export const useSceneSetup = ({
     composerRef,
     setOutlineObjects,
     initializationStatus,
+    // Return new refs
+    outlinePassRef,
+    fxaaPassRef,
+    ambientLightRef,
+    hemisphereLightRef,
+    mainDirectionalLightRef,
   };
 };

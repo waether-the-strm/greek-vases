@@ -5,6 +5,7 @@ import { useVaseManager } from "../hooks/useVaseManager";
 import { useSceneSetup } from "../hooks/useSceneSetup";
 import { useShardManager } from "../hooks/useShardManager";
 import { useGalleryLoader } from "../hooks/useGalleryLoader";
+import { useControls, folder } from "leva";
 
 export const GreekVases = () => {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -29,18 +30,27 @@ export const GreekVases = () => {
     composerRef,
     setOutlineObjects,
     initializationStatus,
+    outlinePassRef,
+    fxaaPassRef,
+    ambientLightRef,
+    hemisphereLightRef,
+    mainDirectionalLightRef,
   } = useSceneSetup({
     mountRef,
     cameraHeight: 3,
   });
 
   // Poprawiono destrukturyzację - galleryModel jest z useGalleryLoader
-  const { galleryModel, windowPane, backgroundPlane, directionalLight } =
-    useGalleryLoader({
-      sceneRef,
-      setOutlineObjects,
-      initializationStatus,
-    });
+  const {
+    galleryModel,
+    windowPane,
+    backgroundPlane,
+    galleryDirectionalLightRef,
+  } = useGalleryLoader({
+    sceneRef,
+    setOutlineObjects,
+    initializationStatus,
+  });
 
   const initialBackgroundPosition = useRef<THREE.Vector3 | null>(null);
 
@@ -51,7 +61,22 @@ export const GreekVases = () => {
       cameraRef,
       isPointerLocked: isPointerLockedRef.current,
       onVasesCreated: () => {
-        refreshOutlines();
+        if (initializationStatus === "ready" && setOutlineObjects) {
+          const objectsToOutline = [
+            ...(vasesRef.current || []),
+            ...(pedestalsRef.current || []),
+          ];
+          console.log(
+            "[GreekVases onVasesCreated] Refreshing outlines with:",
+            objectsToOutline.length,
+            "objects"
+          );
+          setOutlineObjects(objectsToOutline);
+        } else {
+          console.warn(
+            "[GreekVases onVasesCreated] Skipping outline refresh - scene not ready or setOutlineObjects not available."
+          );
+        }
       },
     });
 
@@ -70,31 +95,173 @@ export const GreekVases = () => {
     sceneRef,
   });
 
-  // Function to refresh outlines
-  const refreshOutlines = useCallback(() => {
-    if (
-      initializationStatus === "ready" &&
-      sceneRef.current &&
-      vasesRef.current &&
-      pedestalsRef.current
-    ) {
-      const objectsToOutline = [...vasesRef.current, ...pedestalsRef.current];
-      console.log(
-        "Refreshing outlines with:",
-        objectsToOutline.length,
-        "objects"
-      );
-      setOutlineObjects(objectsToOutline);
-    } else {
-      console.log("Skipping outline refresh, scene not ready or no objects.");
-    }
-  }, [
-    initializationStatus,
-    sceneRef,
-    vasesRef,
-    pedestalsRef,
-    setOutlineObjects,
-  ]);
+  // --- Leva Debug Panel Controls ---
+  useControls(
+    () => ({
+      Renderer: folder({
+        toneMappingExposure: {
+          value: rendererRef.current?.toneMappingExposure ?? 0.2,
+          min: 0,
+          max: 2,
+          step: 0.01,
+          onChange: (v) => {
+            if (rendererRef.current)
+              rendererRef.current.toneMappingExposure = v;
+          },
+        },
+      }),
+      Lights: folder({
+        "Ambient Intensity": {
+          value: ambientLightRef.current?.intensity ?? 0.3,
+          min: 0,
+          max: 2,
+          step: 0.01,
+          onChange: (v) => {
+            if (ambientLightRef.current) ambientLightRef.current.intensity = v;
+          },
+        },
+        "Ambient Color": {
+          value: `#${
+            ambientLightRef.current?.color.getHexString() ?? "ffffff"
+          }`,
+          onChange: (v) => {
+            if (ambientLightRef.current) ambientLightRef.current.color.set(v);
+          },
+        },
+        "Hemisphere Intensity": {
+          value: hemisphereLightRef.current?.intensity ?? 0.2,
+          min: 0,
+          max: 2,
+          step: 0.01,
+          onChange: (v) => {
+            if (hemisphereLightRef.current)
+              hemisphereLightRef.current.intensity = v;
+          },
+        },
+        "Hemisphere Sky Color": {
+          value: `#${
+            hemisphereLightRef.current?.color.getHexString() ?? "ffffff"
+          }`,
+          onChange: (v) => {
+            if (hemisphereLightRef.current)
+              hemisphereLightRef.current.color.set(v);
+          },
+        },
+        "Hemisphere Ground Color": {
+          value: `#${
+            hemisphereLightRef.current?.groundColor.getHexString() ?? "ffffff"
+          }`,
+          onChange: (v) => {
+            if (hemisphereLightRef.current)
+              hemisphereLightRef.current.groundColor.set(v);
+          },
+        },
+        "Main Dir Intensity": {
+          value: mainDirectionalLightRef.current?.intensity ?? 0.3,
+          min: 0,
+          max: 2,
+          step: 0.01,
+          onChange: (v) => {
+            if (mainDirectionalLightRef.current)
+              mainDirectionalLightRef.current.intensity = v;
+          },
+        },
+        "Main Dir Color": {
+          value: `#${
+            mainDirectionalLightRef.current?.color.getHexString() ?? "ffffff"
+          }`,
+          onChange: (v) => {
+            if (mainDirectionalLightRef.current)
+              mainDirectionalLightRef.current.color.set(v);
+          },
+        },
+        "Gallery Dir Intensity": {
+          value: galleryDirectionalLightRef.current?.intensity ?? 0.4,
+          min: 0,
+          max: 2,
+          step: 0.01,
+          onChange: (v) => {
+            if (galleryDirectionalLightRef.current)
+              galleryDirectionalLightRef.current.intensity = v;
+          },
+        },
+        "Gallery Dir Color": {
+          value: `#${
+            galleryDirectionalLightRef.current?.color.getHexString() ?? "ffffff"
+          }`,
+          onChange: (v) => {
+            if (galleryDirectionalLightRef.current)
+              galleryDirectionalLightRef.current.color.set(v);
+          },
+        },
+      }),
+      "Post-Processing": folder({
+        "Outline Strength": {
+          value: outlinePassRef.current?.edgeStrength ?? 5.0,
+          min: 0,
+          max: 10,
+          step: 0.1,
+          onChange: (v) => {
+            if (outlinePassRef.current) outlinePassRef.current.edgeStrength = v;
+          },
+        },
+        "Outline Thickness": {
+          value: outlinePassRef.current?.edgeThickness ?? 2.0,
+          min: 0,
+          max: 4,
+          step: 0.1,
+          onChange: (v) => {
+            if (outlinePassRef.current)
+              outlinePassRef.current.edgeThickness = v;
+          },
+        },
+        "Outline Glow": {
+          value: outlinePassRef.current?.edgeGlow ?? 1.0,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          onChange: (v) => {
+            if (outlinePassRef.current) outlinePassRef.current.edgeGlow = v;
+          },
+        },
+        "Outline Visible Color": {
+          value: `#${
+            outlinePassRef.current?.visibleEdgeColor.getHexString() ?? "000000"
+          }`,
+          onChange: (v) => {
+            if (outlinePassRef.current)
+              outlinePassRef.current.visibleEdgeColor.set(v);
+          },
+        },
+        "Outline Hidden Color": {
+          value: `#${
+            outlinePassRef.current?.hiddenEdgeColor.getHexString() ?? "000000"
+          }`,
+          onChange: (v) => {
+            if (outlinePassRef.current)
+              outlinePassRef.current.hiddenEdgeColor.set(v);
+          },
+        },
+        "Enable FXAA": {
+          value: fxaaPassRef.current?.enabled ?? false,
+          onChange: (v) => {
+            if (fxaaPassRef.current) fxaaPassRef.current.enabled = v;
+          },
+        },
+      }),
+    }),
+    // Dependencies: re-run useControls if refs become available
+    [
+      rendererRef.current,
+      ambientLightRef.current,
+      hemisphereLightRef.current,
+      mainDirectionalLightRef.current,
+      galleryDirectionalLightRef.current,
+      outlinePassRef.current,
+      fxaaPassRef.current,
+    ]
+  );
+  // --- End Leva Controls ---
 
   // Add gallery objects to the scene imperatively when they are loaded
   useEffect(() => {
@@ -119,19 +286,15 @@ export const GreekVases = () => {
             6
           )})`
         : null,
-      directionalLight: directionalLight
-        ? `${directionalLight.name} (ID: ${directionalLight.uuid.substring(
-            0,
-            6
-          )})`
-        : null,
     });
+
+    const lightToAdd = galleryDirectionalLightRef.current;
 
     const objectsToAdd: (THREE.Object3D | null)[] = [
       galleryModel,
       windowPane,
       backgroundPlane,
-      directionalLight,
+      lightToAdd,
     ];
 
     objectsToAdd.forEach((obj) => {
@@ -143,7 +306,11 @@ export const GreekVases = () => {
             } (ID: ${obj.uuid.substring(0, 6)})`
           );
           scene.add(obj);
-          if (obj instanceof THREE.DirectionalLight && !obj.target.parent) {
+          if (
+            obj === lightToAdd &&
+            obj instanceof THREE.DirectionalLight &&
+            !obj.target.parent
+          ) {
             if (!scene.children.includes(obj.target)) {
               console.log(`Adding light target for ${obj.name} to scene.`);
               scene.add(obj.target);
@@ -167,7 +334,9 @@ export const GreekVases = () => {
           );
         }
       } else {
-        console.log("Encountered null object in objectsToAdd array.");
+        console.log(
+          "Encountered null object in objectsToAdd array (potentially light not ready)."
+        );
       }
     });
     console.log(
@@ -186,6 +355,7 @@ export const GreekVases = () => {
           );
           scene.remove(obj);
           if (
+            obj === lightToAdd &&
             obj instanceof THREE.DirectionalLight &&
             obj.target.parent === scene
           ) {
@@ -205,7 +375,7 @@ export const GreekVases = () => {
     galleryModel,
     windowPane,
     backgroundPlane,
-    directionalLight,
+    galleryDirectionalLightRef,
   ]);
 
   // Pointer Lock Handlers
@@ -368,23 +538,28 @@ export const GreekVases = () => {
   // Effect to set outline objects when vases are ready
   useEffect(() => {
     if (initializationStatus === "ready") {
-      refreshOutlines();
+      setOutlineObjects(vasesRef.current || []);
     }
   }, [
     initializationStatus,
     vasesRef.current,
     pedestalsRef.current,
-    refreshOutlines,
+    setOutlineObjects,
   ]);
 
   // Connect Vase Manager break event to Shard Manager creation
   useEffect(() => {
     setOnVaseBrokenCallback((info) => {
       createShards(info);
-      refreshOutlines();
+      setOutlineObjects(vasesRef.current || []);
     });
     return () => setOnVaseBrokenCallback(() => {});
-  }, [setOnVaseBrokenCallback, createShards, refreshOutlines]);
+  }, [
+    setOnVaseBrokenCallback,
+    createShards,
+    setOutlineObjects,
+    vasesRef.current,
+  ]);
 
   // Cleanup textures when component unmounts
   useEffect(() => {

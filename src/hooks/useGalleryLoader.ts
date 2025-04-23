@@ -19,7 +19,7 @@ interface GalleryLoaderResult {
   galleryModel: THREE.Group | null;
   windowPane: THREE.Mesh | null;
   backgroundPlane: THREE.Mesh | null;
-  directionalLight: THREE.DirectionalLight | null;
+  galleryDirectionalLightRef: React.RefObject<THREE.DirectionalLight | null>;
 }
 
 const updateMaterials = (model: THREE.Object3D) => {
@@ -47,8 +47,9 @@ export const useGalleryLoader = ({
   const [backgroundPlane, setBackgroundPlane] = useState<THREE.Mesh | null>(
     null
   );
-  const [directionalLight, setDirectionalLight] =
-    useState<THREE.DirectionalLight | null>(null);
+  const galleryDirectionalLightRef = useRef<THREE.DirectionalLight | null>(
+    null
+  );
   const modelLoadedRef = useRef(false);
 
   useEffect(() => {
@@ -145,7 +146,7 @@ export const useGalleryLoader = ({
         console.log("Creating directional light...");
         const createdDirectionalLight = new THREE.DirectionalLight(
           0xfff5e6,
-          0.7
+          0.4
         );
         createdDirectionalLight.name = "GalleryDirectionalLight";
         createdDirectionalLight.position.set(0, 7, 25);
@@ -161,8 +162,14 @@ export const useGalleryLoader = ({
         createdDirectionalLight.shadow.camera.bottom = -20;
         createdDirectionalLight.shadow.radius = 8;
         createdDirectionalLight.shadow.bias = -0.0005;
-        console.log("Setting directional light state...");
-        setDirectionalLight(createdDirectionalLight);
+        console.log("Setting directional light ref...");
+        if (isMounted) {
+          galleryDirectionalLightRef.current = createdDirectionalLight;
+          console.log(
+            "GalleryDirectionalLight ref set:",
+            galleryDirectionalLightRef.current
+          );
+        }
       },
       undefined,
       (error) => {
@@ -175,8 +182,15 @@ export const useGalleryLoader = ({
     return () => {
       console.log("useGalleryLoader useEffect cleanup.");
       isMounted = false;
+      // Optional: Clear the ref on cleanup if needed, though the light object itself might be managed elsewhere
+      // galleryDirectionalLightRef.current = null;
     };
   }, [sceneRef, initializationStatus]);
 
-  return { galleryModel, windowPane, backgroundPlane, directionalLight };
+  return {
+    galleryModel,
+    windowPane,
+    backgroundPlane,
+    galleryDirectionalLightRef,
+  };
 };
