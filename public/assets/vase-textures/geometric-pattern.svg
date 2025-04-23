@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Tło wazy - terakota jasna -->
+  <rect width="800" height="800" fill="#f0c090"/>
+  
+  <!-- Pasy poziome (burgundowe) -->
+  <rect y="50" width="800" height="40" fill="#702020"/>
+  <rect y="150" width="800" height="40" fill="#702020"/>
+  <rect y="250" width="800" height="40" fill="#702020"/>
+  <rect y="350" width="800" height="40" fill="#702020"/>
+  <rect y="450" width="800" height="40" fill="#702020"/>
+  <rect y="550" width="800" height="40" fill="#702020"/>
+  <rect y="650" width="800" height="40" fill="#702020"/>
+  <rect y="750" width="800" height="40" fill="#702020"/>
+  
+  <!-- Wzory geometryczne między pasami -->
+  
+  <!-- Rząd 1: Wzór szachownicy -->
+  <g transform="translate(0, 90)">
+    <rect x="50" width="25" height="25" fill="#702020"/>
+    <rect x="100" width="25" height="25" fill="#702020"/>
+    <rect x="150" width="25" height="25" fill="#702020"/>
+    <rect x="200" width="25" height="25" fill="#702020"/>
+    <rect x="250" width="25" height="25" fill="#702020"/>
+    <rect x="300" width="25" height="25" fill="#702020"/>
+    <rect x="350" width="25" height="25" fill="#702020"/>
+    <rect x="400" width="25" height="25" fill="#702020"/>
+    <rect x="450" width="25" height="25" fill="#702020"/>
+    <rect x="500" width="25" height="25" fill="#702020"/>
+    <rect x="550" width="25" height="25" fill="#702020"/>
+    <rect x="600" width="25" height="25" fill="#702020"/>
+    <rect x="650" width="25" height="25" fill="#702020"/>
+    <rect x="700" width="25" height="25" fill="#702020"/>
+    <rect x="750" width="25" height="25" fill="#702020"/>
+    
+    <rect x="75" y="25" width="25" height="25" fill="#702020"/>
+    <rect x="125" y="25" width="25" height="25" fill="#702020"/>
+    <rect x="175" y="25" width="25" height="25" fill="#702020"/>
+    <rect x="225" y="25" width="25" height="25" fill="#702020"/>
+    <rect x="275" y="25" width="25" height="25" fill="#702020"/>
+    <rect x="325" y="25" width="25" height="25" fill="#702020"/>
+    <rect x="375" y="25" width="25" height="25" fill="#702020"/>
+    <rect x="425" y="25" width="25" height="25" fill="#702020"/>
+    <rect x="475" y="25" width="25" height="25" fill="#702020"/>
+    <rect x="525" y="25" width="25" height="25" fill="#702020"/>
+    <rect x="575" y="25" width="25" height="25" fill="#702020"/>
+    <rect x="625" y="25" width="25" height="25" fill="#702020"/>
+    <rect x="675" y="25" width="25" height="25" fill="#702020"/>
+    <rect x="725" y="25" width="25" height="25" fill="#702020"/>
+    <rect x="775" y="25" width="25" height="25" fill="#702020"/>
+  </g>
+  
+  <!-- Rząd 2: Wzór trójkątów -->
+  <g transform="translate(0, 195)" fill="#702020">
+    <path d="M50,0 l20,0 l-10,20 z"/>
+    <path d="M100,0 l20,0 l-10,20 z"/>
+    <path d="M150,0 l20,0 l-10,20 z"/>
+    <path d="M200,0 l20,0 l-10,20 z"/>
+    <path d="M250,0 l20,0 l-10,20 z"/>
+    <path d="M300,0 l20,0 l-10,20 z"/>
+    <path d="M350,0 l20,0 l-10,20 z"/>
+    <path d="M400,0 l20,0 l-10,20 z"/>
+    <path d="M450,0 l20,0 l-10,20 z"/>
+    <path d="M500,0 l20,0 l-10,20 z"/>
+    <path d="M550,0 l20,0 l-10,20 z"/>
+    <path d="M600,0 l20,0 l-10,20 z"/>
+    <path d="M650,0 l20,0 l-10,20 z"/>
+    <path d="M700,0 l20,0 l-10,20 z"/>
+    <path d="M750,0 l20,0 l-10,20 z"/>
+    
+    <path d="M75,35 l20,0 l-10,-20 z"/>
+    <path d="M125,35 l20,0 l-10,-20 z"/>
+    <path d="M175,35 l20,0 l-10,-20 z"/>
+    <path d="M225,35 l20,0 l-10,-20 z"/>
+    <path d="M275,35 l20,0 l-10,-20 z"/>
+    <path d="M325,35 l20,0 l-10,-20 z"/>
+    <path d="M375,35 l20,0 l-10,-20 z"/>
+    <path d="M425,35 l20,0 l-10,-20 z"/>
+    <path d="M475,35 l20,0 l-10,-20 z"/>
+    <path d="M525,35 l20,0 l-10,-20 z"/>
+    <path d="M575,35 l20,0 l-10,-20 z"/>
+    <path d="M625,35 l20,0 l-10,-20 z"/>
+    <path d="M675,35 l20,0 l-10,-20 z"/>
+    <path d="M725,35 l20,0 l-10,-20 z"/>
+    <path d="M775,35 l20,0 l-10,-20 z"/>
+  </g>
+  
+  <!-- Rząd 3: Wzór zygzaków -->
+  <g transform="translate(0, 295)" stroke="#702020" stroke-width="3" fill="none">
+    <path d="M50,0 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15"/>
+    <path d="M150,0 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15"/>
+    <path d="M250,0 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15"/>
+    <path d="M350,0 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15"/>
+    <path d="M450,0 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15"/>
+    <path d="M550,0 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15"/>
+    <path d="M650,0 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15"/>
+    <path d="M750,0 l10,15 l10,-15"/>
+    
+    <path d="M50,30 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15"/>
+    <path d="M150,30 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15"/>
+    <path d="M250,30 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15"/>
+    <path d="M350,30 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15"/>
+    <path d="M450,30 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15"/>
+    <path d="M550,30 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15"/>
+    <path d="M650,30 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15"/>
+    <path d="M750,30 l10,-15 l10,15"/>
+  </g>
+  
+  <!-- Rząd 4: Wzór kół koncentrycznych -->
+  <g transform="translate(0, 395)" fill="#702020">
+    <circle cx="60" cy="15" r="15"/>
+    <circle cx="60" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="60" cy="15" r="5"/>
+    
+    <circle cx="110" cy="15" r="15"/>
+    <circle cx="110" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="110" cy="15" r="5"/>
+    
+    <circle cx="160" cy="15" r="15"/>
+    <circle cx="160" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="160" cy="15" r="5"/>
+    
+    <circle cx="210" cy="15" r="15"/>
+    <circle cx="210" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="210" cy="15" r="5"/>
+    
+    <circle cx="260" cy="15" r="15"/>
+    <circle cx="260" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="260" cy="15" r="5"/>
+    
+    <circle cx="310" cy="15" r="15"/>
+    <circle cx="310" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="310" cy="15" r="5"/>
+    
+    <circle cx="360" cy="15" r="15"/>
+    <circle cx="360" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="360" cy="15" r="5"/>
+    
+    <circle cx="410" cy="15" r="15"/>
+    <circle cx="410" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="410" cy="15" r="5"/>
+    
+    <circle cx="460" cy="15" r="15"/>
+    <circle cx="460" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="460" cy="15" r="5"/>
+    
+    <circle cx="510" cy="15" r="15"/>
+    <circle cx="510" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="510" cy="15" r="5"/>
+    
+    <circle cx="560" cy="15" r="15"/>
+    <circle cx="560" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="560" cy="15" r="5"/>
+    
+    <circle cx="610" cy="15" r="15"/>
+    <circle cx="610" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="610" cy="15" r="5"/>
+    
+    <circle cx="660" cy="15" r="15"/>
+    <circle cx="660" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="660" cy="15" r="5"/>
+    
+    <circle cx="710" cy="15" r="15"/>
+    <circle cx="710" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="710" cy="15" r="5"/>
+    
+    <circle cx="760" cy="15" r="15"/>
+    <circle cx="760" cy="15" r="10" fill="#f0c090"/>
+    <circle cx="760" cy="15" r="5"/>
+  </g>
+  
+  <!-- Rząd 5: Meander grecki (klucz grecki) -->
+  <g transform="translate(0, 490)" fill="#702020">
+    <path d="M30,0 h40 v10 h-30 v10 h30 v10 h-40 z"/>
+    <path d="M90,0 h40 v10 h-30 v10 h30 v10 h-40 z"/>
+    <path d="M150,0 h40 v10 h-30 v10 h30 v10 h-40 z"/>
+    <path d="M210,0 h40 v10 h-30 v10 h30 v10 h-40 z"/>
+    <path d="M270,0 h40 v10 h-30 v10 h30 v10 h-40 z"/>
+    <path d="M330,0 h40 v10 h-30 v10 h30 v10 h-40 z"/>
+    <path d="M390,0 h40 v10 h-30 v10 h30 v10 h-40 z"/>
+    <path d="M450,0 h40 v10 h-30 v10 h30 v10 h-40 z"/>
+    <path d="M510,0 h40 v10 h-30 v10 h30 v10 h-40 z"/>
+    <path d="M570,0 h40 v10 h-30 v10 h30 v10 h-40 z"/>
+    <path d="M630,0 h40 v10 h-30 v10 h30 v10 h-40 z"/>
+    <path d="M690,0 h40 v10 h-30 v10 h30 v10 h-40 z"/>
+    <path d="M750,0 h40 v10 h-30 v10 h30 v10 h-40 z"/>
+  </g>
+  
+  <!-- Rząd 6: Wzór rombowy -->
+  <g transform="translate(0, 590)" fill="#702020">
+    <path d="M60,15 l15,-15 l15,15 l-15,15 z"/>
+    <path d="M110,15 l15,-15 l15,15 l-15,15 z"/>
+    <path d="M160,15 l15,-15 l15,15 l-15,15 z"/>
+    <path d="M210,15 l15,-15 l15,15 l-15,15 z"/>
+    <path d="M260,15 l15,-15 l15,15 l-15,15 z"/>
+    <path d="M310,15 l15,-15 l15,15 l-15,15 z"/>
+    <path d="M360,15 l15,-15 l15,15 l-15,15 z"/>
+    <path d="M410,15 l15,-15 l15,15 l-15,15 z"/>
+    <path d="M460,15 l15,-15 l15,15 l-15,15 z"/>
+    <path d="M510,15 l15,-15 l15,15 l-15,15 z"/>
+    <path d="M560,15 l15,-15 l15,15 l-15,15 z"/>
+    <path d="M610,15 l15,-15 l15,15 l-15,15 z"/>
+    <path d="M660,15 l15,-15 l15,15 l-15,15 z"/>
+    <path d="M710,15 l15,-15 l15,15 l-15,15 z"/>
+  </g>
+  
+  <!-- Rząd 7: Wzór zig-zag z kropkami -->
+  <g transform="translate(0, 690)" fill="#702020">
+    <!-- Zygzaki -->
+    <path d="M50,5 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15"/>
+    <path d="M150,5 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15"/>
+    <path d="M250,5 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15"/>
+    <path d="M350,5 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15"/>
+    <path d="M450,5 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15"/>
+    <path d="M550,5 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15"/>
+    <path d="M650,5 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15 l10,15 l10,-15"/>
+    <path d="M750,5 l10,15 l10,-15"/>
+    
+    <!-- Kropki -->
+    <circle cx="60" cy="5" r="3"/>
+    <circle cx="80" cy="5" r="3"/>
+    <circle cx="100" cy="5" r="3"/>
+    <circle cx="120" cy="5" r="3"/>
+    
+    <circle cx="160" cy="5" r="3"/>
+    <circle cx="180" cy="5" r="3"/>
+    <circle cx="200" cy="5" r="3"/>
+    <circle cx="220" cy="5" r="3"/>
+    
+    <circle cx="260" cy="5" r="3"/>
+    <circle cx="280" cy="5" r="3"/>
+    <circle cx="300" cy="5" r="3"/>
+    <circle cx="320" cy="5" r="3"/>
+    
+    <circle cx="360" cy="5" r="3"/>
+    <circle cx="380" cy="5" r="3"/>
+    <circle cx="400" cy="5" r="3"/>
+    <circle cx="420" cy="5" r="3"/>
+    
+    <circle cx="460" cy="5" r="3"/>
+    <circle cx="480" cy="5" r="3"/>
+    <circle cx="500" cy="5" r="3"/>
+    <circle cx="520" cy="5" r="3"/>
+    
+    <circle cx="560" cy="5" r="3"/>
+    <circle cx="580" cy="5" r="3"/>
+    <circle cx="600" cy="5" r="3"/>
+    <circle cx="620" cy="5" r="3"/>
+    
+    <circle cx="660" cy="5" r="3"/>
+    <circle cx="680" cy="5" r="3"/>
+    <circle cx="700" cy="5" r="3"/>
+    <circle cx="720" cy="5" r="3"/>
+    
+    <circle cx="760" cy="5" r="3"/>
+    <circle cx="780" cy="5" r="3"/>
+  </g>
+  
+  <!-- Centralna sekcja z wzorem zwierząt w stylu geometrycznym -->
+  <g transform="translate(100, 400)" fill="#702020">
+    <!-- Pierwszy zwierzak (jeleń geometryczny) -->
+    <rect x="50" y="20" width="100" height="40"/> <!-- Tułów -->
+    <rect x="150" y="20" width="15" height="40"/> <!-- Szyja -->
+    <rect x="165" y="15" width="25" height="20"/> <!-- Głowa -->
+    <rect x="180" y="5" width="5" height="10"/> <!-- Ucho -->
+    <rect x="165" y="5" width="5" height="10"/> <!-- Ucho -->
+    <rect x="60" y="60" width="10" height="30"/> <!-- Noga 1 -->
+    <rect x="130" y="60" width="10" height="30"/> <!-- Noga 2 -->
+    <rect x="80" y="60" width="10" height="30"/> <!-- Noga 3 -->
+    <rect x="110" y="60" width="10" height="30"/> <!-- Noga 4 -->
+    <path d="M175,15 l15,-15 l5,5 l-15,15 z"/> <!-- Poroże 1 -->
+    <path d="M175,15 l10,-10 l10,5 l-10,10 z"/> <!-- Poroże 2 -->
+    
+    <!-- Drugi zwierzak (ptak geometryczny) -->
+    <rect x="300" y="30" width="80" height="30"/> <!-- Tułów -->
+    <rect x="380" y="25" width="20" height="20"/> <!-- Głowa -->
+    <rect x="395" y="30" width="15" height="5"/> <!-- Dziób -->
+    <rect x="380" y="15" width="5" height="10"/> <!-- Grzebień -->
+    <rect x="375" y="15" width="5" height="10"/> <!-- Grzebień -->
+    <rect x="370" y="15" width="5" height="10"/> <!-- Grzebień -->
+    <rect x="310" y="60" width="8" height="20"/> <!-- Noga 1 -->
+    <rect x="350" y="60" width="8" height="20"/> <!-- Noga 2 -->
+    <path d="M280,30 l20,10 l0,10 z"/> <!-- Skrzydło -->
+    <path d="M380,50 l30,0 l-10,10 z"/> <!-- Ogon -->
+    
+    <!-- Trzeci zwierzak (ryba geometryczna) -->
+    <path d="M500,40 l80,0 l20,20 l-20,20 l-80,0 z"/> <!-- Ciało -->
+    <path d="M580,50 l20,0 l0,20 l-20,0 z"/> <!-- Ogon -->
+    <path d="M600,50 l15,10 l-15,10 z"/> <!-- Płetwa ogonowa -->
+    <rect x="500" y="45" width="10" height="10"/> <!-- Oko -->
+    <path d="M530,40 l0,-15 l10,15 z"/> <!-- Płetwa górna -->
+    <path d="M530,80 l0,15 l10,-15 z"/> <!-- Płetwa dolna -->
+  </g>
+
+  <!-- Pas pionowy, podział na dwie strefy -->
+  <rect x="400" y="0" width="5" height="800" fill="#702020"/>
+</svg>

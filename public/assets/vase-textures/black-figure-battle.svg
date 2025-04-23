@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Tło wazy - czerwonopomarańczowy odcień terakoty -->
+  <rect width="800" height="800" fill="#e8b27d"/>
+  
+  <!-- Pas górny - czarny -->
+  <rect width="800" height="120" fill="#000000"/>
+  
+  <!-- Pas dolny - czarny -->
+  <rect y="680" width="800" height="120" fill="#000000"/>
+  
+  <!-- Wzór palmety na górze -->
+  <g fill="#000000" transform="translate(0, 130)">
+    <!-- Powtarzający się wzór palmety -->
+    <path d="M0,0 c20,0 30,10 40,20 c10,-10 20,-20 40,-20 c-20,40 -40,60 -40,60 c0,0 -20,-20 -40,-60" />
+    <path d="M100,0 c20,0 30,10 40,20 c10,-10 20,-20 40,-20 c-20,40 -40,60 -40,60 c0,0 -20,-20 -40,-60" />
+    <path d="M200,0 c20,0 30,10 40,20 c10,-10 20,-20 40,-20 c-20,40 -40,60 -40,60 c0,0 -20,-20 -40,-60" />
+    <path d="M300,0 c20,0 30,10 40,20 c10,-10 20,-20 40,-20 c-20,40 -40,60 -40,60 c0,0 -20,-20 -40,-60" />
+    <path d="M400,0 c20,0 30,10 40,20 c10,-10 20,-20 40,-20 c-20,40 -40,60 -40,60 c0,0 -20,-20 -40,-60" />
+    <path d="M500,0 c20,0 30,10 40,20 c10,-10 20,-20 40,-20 c-20,40 -40,60 -40,60 c0,0 -20,-20 -40,-60" />
+    <path d="M600,0 c20,0 30,10 40,20 c10,-10 20,-20 40,-20 c-20,40 -40,60 -40,60 c0,0 -20,-20 -40,-60" />
+    <path d="M700,0 c20,0 30,10 40,20 c10,-10 20,-20 40,-20 c-20,40 -40,60 -40,60 c0,0 -20,-20 -40,-60" />
+  </g>
+  
+  <!-- Główna scena bitwy -->
+  <g transform="translate(100, 250)">
+    <!-- Pierwszy wojownik z tarczą -->
+    <circle cx="100" cy="100" r="60" fill="#000000"/> <!-- Głowa -->
+    <path d="M80,160 l40,180 l40,-180 z" fill="#000000"/> <!-- Ciało/tunika -->
+    <circle cx="60" cy="200" r="45" fill="#000000"/> <!-- Tarcza -->
+    <rect x="130" y="170" width="80" height="10" fill="#000000"/> <!-- Włócznia -->
+    <path d="M140,160 c0,0 10,30 0,60 c-10,-30 0,-60 0,-60" fill="#000000"/> <!-- Ręka -->
+    
+    <!-- Detale w kolorze tła (wkraplanie) -->
+    <circle cx="60" cy="200" r="20" fill="#e8b27d"/> <!-- Wzór na tarczy -->
+    <circle cx="95" cy="80" r="5" fill="#e8b27d"/> <!-- Oko -->
+    <circle cx="105" cy="80" r="5" fill="#e8b27d"/> <!-- Oko -->
+    <path d="M85,100 c10,10 20,10 30,0" fill="none" stroke="#e8b27d" stroke-width="2"/> <!-- Usta -->
+    
+    <!-- Drugi wojownik -->
+    <circle cx="300" cy="100" r="60" fill="#000000"/> <!-- Głowa -->
+    <path d="M270,160 l40,180 l40,-180 z" fill="#000000"/> <!-- Ciało/tunika -->
+    <path d="M250,160 c0,0 -40,30 -60,50" fill="none" stroke="#000000" stroke-width="10"/> <!-- Ręka -->
+    <rect x="190" y="170" width="80" height="10" fill="#000000" transform="rotate(-45, 190, 170)"/> <!-- Miecz -->
+    <path d="M330,160 c0,0 10,30 0,60 c-10,-30 0,-60 0,-60" fill="#000000"/> <!-- Ręka -->
+    
+    <!-- Detale w kolorze tła (wkraplanie) -->
+    <circle cx="295" cy="80" r="5" fill="#e8b27d"/> <!-- Oko -->
+    <circle cx="305" cy="80" r="5" fill="#e8b27d"/> <!-- Oko -->
+    <path d="M285,100 c10,10 20,10 30,0" fill="none" stroke="#e8b27d" stroke-width="2"/> <!-- Usta -->
+    
+    <!-- Koń (fragment) -->
+    <path d="M460,200 c50,0 150,-20 200,-40 c-10,50 -20,100 -200,100 z" fill="#000000"/> <!-- Ciało konia -->
+    <path d="M520,150 c0,0 20,-20 40,-30 c5,10 10,20 0,30 z" fill="#000000"/> <!-- Głowa konia -->
+    <path d="M470,250 l0,80 l10,-5 l0,-70 z" fill="#000000"/> <!-- Noga konia 1 -->
+    <path d="M520,250 l0,80 l10,-5 l0,-70 z" fill="#000000"/> <!-- Noga konia 2 -->
+    <path d="M570,240 l0,80 l10,-5 l0,-70 z" fill="#000000"/> <!-- Noga konia 3 -->
+    <path d="M620,220 l0,80 l10,-5 l0,-70 z" fill="#000000"/> <!-- Noga konia 4 -->
+    <path d="M650,160 c0,0 10,0 30,10 c-5,5 -20,0 -30,-10 z" fill="#000000"/> <!-- Ucho konia -->
+    
+    <!-- Ozdobne detale na koniu -->
+    <path d="M500,180 c30,-5 80,-15 150,-30" fill="none" stroke="#e8b27d" stroke-width="2"/> <!-- Uprząż -->
+    <circle cx="540" cy="140" r="5" fill="#e8b27d"/> <!-- Oko konia -->
+  </g>
+  
+  <!-- Wzór fali na dole -->
+  <g fill="#000000" transform="translate(0, 640)">
+    <path d="M0,20 c10,-20 20,-20 30,0 c10,20 20,20 30,0 c10,-20 20,-20 30,0 c10,20 20,20 30,0 c10,-20 20,-20 30,0 c10,20 20,20 30,0 c10,-20 20,-20 30,0 c10,20 20,20 30,0" />
+    <path d="M240,20 c10,-20 20,-20 30,0 c10,20 20,20 30,0 c10,-20 20,-20 30,0 c10,20 20,20 30,0 c10,-20 20,-20 30,0 c10,20 20,20 30,0 c10,-20 20,-20 30,0 c10,20 20,20 30,0" />
+    <path d="M480,20 c10,-20 20,-20 30,0 c10,20 20,20 30,0 c10,-20 20,-20 30,0 c10,20 20,20 30,0 c10,-20 20,-20 30,0 c10,20 20,20 30,0 c10,-20 20,-20 30,0 c10,20 20,20 30,0" />
+    <path d="M720,20 c10,-20 20,-20 30,0 c10,20 20,20 30,0 c10,-20 20,-20 30,0" />
+  </g>
+</svg>

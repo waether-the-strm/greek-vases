@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Tło wazy - czerwonopomarańczowy odcień terakoty -->
+  <rect width="800" height="800" fill="#e8b27d"/>
+  
+  <!-- Pas górny - czarny -->
+  <rect width="800" height="100" fill="#000000"/>
+  
+  <!-- Pas dolny - czarny -->
+  <rect y="700" width="800" height="100" fill="#000000"/>
+  
+  <!-- Meander grecki wokół górnego pasa -->
+  <g fill="#000000" transform="translate(0, 120)">
+    <!-- Powtarzający się wzór meandrowy (grecki klucz) -->
+    <path d="M0,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M80,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M160,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M240,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M320,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M400,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M480,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M560,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M640,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M720,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+  </g>
+  
+  <!-- Meander grecki wokół dolnego pasa -->
+  <g fill="#000000" transform="translate(0, 650)">
+    <!-- Powtarzający się wzór meandrowy (grecki klucz) -->
+    <path d="M0,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M80,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M160,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M240,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M320,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M400,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M480,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M560,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M640,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+    <path d="M720,0 h60 v20 h-40 v20 h40 v20 h-60 z"/>
+  </g>
+  
+  <!-- Centralna scena - stylizowany wojownik -->
+  <g transform="translate(250, 250)">
+    <!-- Wojownik z włócznią i tarczą -->
+    <circle cx="150" cy="100" r="70" fill="#000000"/> <!-- Głowa -->
+    <rect x="135" y="170" width="30" height="120" fill="#000000"/> <!-- Ciało -->
+    <rect x="125" y="260" width="20" height="80" fill="#000000"/> <!-- Lewa noga -->
+    <rect x="155" y="260" width="20" height="80" fill="#000000"/> <!-- Prawa noga -->
+    <rect x="105" y="190" width="20" height="70" fill="#000000"/> <!-- Lewe ramię -->
+    <rect x="175" y="190" width="20" height="40" fill="#000000"/> <!-- Prawe ramię -->
+    <circle cx="90" cy="210" r="35" fill="#000000"/> <!-- Tarcza -->
+    <rect x="195" y="170" width="5" height="80" fill="#000000"/> <!-- Włócznia -->
+    
+    <!-- Ozdobne elementy białe (wkraplanie) -->
+    <circle cx="150" cy="100" r="20" fill="#e8b27d"/> <!-- Twarz -->
+    <circle cx="90" cy="210" r="15" fill="#e8b27d"/> <!-- Wzór na tarczy -->
+    <circle cx="135" cy="70" r="5" fill="#e8b27d"/> <!-- Oko -->
+    <circle cx="165" cy="70" r="5" fill="#e8b27d"/> <!-- Oko -->
+  </g>
+</svg>

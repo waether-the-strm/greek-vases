@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Tło wazy - czarne -->
+  <rect width="800" height="800" fill="#000000"/>
+  
+  <!-- Pas górny - terakota -->
+  <rect width="800" height="80" fill="#e8b27d"/>
+  
+  <!-- Pas dolny - terakota -->
+  <rect y="720" width="800" height="80" fill="#e8b27d"/>
+  
+  <!-- Wzór geometryczny na górnym pasie -->
+  <g fill="#000000">
+    <!-- Powtarzający się wzór trapezowy -->
+    <path d="M20,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M70,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M120,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M170,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M220,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M270,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M320,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M370,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M420,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M470,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M520,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M570,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M620,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M670,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M720,20 l30,0 l10,40 l-50,0 z"/>
+    <path d="M770,20 l30,0 l10,40 l-50,0 z"/>
+  </g>
+  
+  <!-- Centralna scena - atleci ćwiczący w palestrze -->
+  <g transform="translate(50, 160)">
+    <!-- Pierwszy atleta - dyskobol -->
+    <g fill="#e8b27d">
+      <circle cx="100" cy="100" r="40"/> <!-- Głowa -->
+      <path d="M90,140 c0,0 -10,100 -10,150 c5,15 35,15 40,0 c0,-50 -10,-150 -10,-150"/> <!-- Tułów i nogi -->
+      <path d="M90,180 c0,0 -40,0 -60,20"/> <!-- Lewa ręka -->
+      <path d="M110,150 c0,0 30,-20 60,-10 c10,10 0,20 -10,20"/> <!-- Prawa ręka -->
+      <circle cx="160" cy="160" r="15"/> <!-- Dysk -->
+    </g>
+    
+    <!-- Detale czarne -->
+    <g fill="none" stroke="#000000" stroke-width="1.5">
+      <circle cx="85" cy="90" r="5"/> <!-- Oko -->
+      <circle cx="115" cy="90" r="5"/> <!-- Oko -->
+      <path d="M90,110 c0,0 10,10 20,0"/> <!-- Usta -->
+      <path d="M70,80 c0,0 20,-20 60,0"/> <!-- Włosy -->
+      <path d="M160,160 a15,15 0 0,0 -10,0 a15,15 0 0,0 -5,5"/> <!-- Detale dysku -->
+    </g>
+    
+    <!-- Drugi atleta - zapaśnik -->
+    <g fill="#e8b27d">
+      <circle cx="250" cy="100" r="40"/> <!-- Głowa -->
+      <path d="M240,140 c0,0 -5,80 -5,130 c0,20 30,20 30,0 c0,-50 -5,-130 -5,-130"/> <!-- Tułów i nogi -->
+      <path d="M240,160 c-10,10 -30,20 -50,10"/> <!-- Lewa ręka -->
+      <path d="M260,160 c10,10 30,20 50,10"/> <!-- Prawa ręka -->
+      <ellipse cx="240" cy="110" rx="5" ry="10"/> <!-- Ucho -->
+      <ellipse cx="260" cy="110" rx="5" ry="10"/> <!-- Ucho -->
+    </g>
+    
+    <!-- Detale czarne -->
+    <g fill="none" stroke="#000000" stroke-width="1.5">
+      <circle cx="235" cy="90" r="5"/> <!-- Oko -->
+      <circle cx="265" cy="90" r="5"/> <!-- Oko -->
+      <path d="M240,110 c0,0 10,10 20,0"/> <!-- Usta -->
+      <path d="M220,80 c0,0 20,-20 60,0"/> <!-- Włosy -->
+      <path d="M240,170 c0,0 5,10 20,10"/> <!-- Mięśnie brzucha -->
+      <path d="M240,190 c0,0 5,10 20,10"/> <!-- Mięśnie brzucha -->
+    </g>
+    
+    <!-- Trzeci atleta - biegacz -->
+    <g fill="#e8b27d">
+      <circle cx="400" cy="100" r="40"/> <!-- Głowa -->
+      <path d="M390,140 c0,0 -5,100 -5,160 c5,10 25,10 30,0 c0,-60 -5,-160 -5,-160"/> <!-- Tułów i nogi -->
+      <path d="M390,180 c-10,-10 -20,-10 -40,-5"/> <!-- Lewa ręka w tył -->
+      <path d="M410,180 c10,-10 20,-10 40,-5"/> <!-- Prawa ręka w przód -->
+      <path d="M380,240 c-5,10 -10,20 -5,40"/> <!-- Lewa noga zgięta -->
+      <path d="M415,270 c0,20 0,30 -5,40"/> <!-- Prawa noga wyprostowana -->
+    </g>
+    
+    <!-- Detale czarne -->
+    <g fill="none" stroke="#000000" stroke-width="1.5">
+      <circle cx="385" cy="90" r="5"/> <!-- Oko -->
+      <circle cx="415" cy="90" r="5"/> <!-- Oko -->
+      <path d="M390,110 c0,0 10,10 20,0"/> <!-- Usta -->
+      <path d="M370,80 c0,0 20,-20 60,0"/> <!-- Włosy -->
+      <path d="M380,240 c-5,10 -10,20 -5,40"/> <!-- Podkreślenie zgiętej nogi -->
+      <path d="M390,170 c0,0 5,10 20,10"/> <!-- Mięśnie brzucha -->
+    </g>
+    
+    <!-- Czwarty atleta - bokser -->
+    <g fill="#e8b27d">
+      <circle cx="550" cy="100" r="40"/> <!-- Głowa -->
+      <path d="M540,140 c0,0 -10,100 -10,150 c5,15 35,15 40,0 c0,-50 -10,-150 -10,-150"/> <!-- Tułów i nogi -->
+      <path d="M540,160 c-10,-5 -40,-10 -60,10"/> <!-- Lewa ręka z pięścią -->
+      <path d="M560,160 c10,-10 60,-20 70,0"/> <!-- Prawa ręka uniesiona -->
+      <circle cx="480" cy="170" r="10"/> <!-- Pięść z cestusem -->
+      <path d="M630,145 c0,0 5,5 0,10 c-5,5 -10,5 -10,5"/> <!-- Pięść z cestusem -->
+    </g>
+    
+    <!-- Detale czarne -->
+    <g fill="none" stroke="#000000" stroke-width="1.5">
+      <circle cx="535" cy="90" r="5"/> <!-- Oko -->
+      <circle cx="565" cy="90" r="5"/> <!-- Oko -->
+      <path d="M540,110 c0,0 10,10 20,0"/> <!-- Usta -->
+      <path d="M520,80 c0,0 20,-20 60,0"/> <!-- Włosy -->
+      <path d="M480,170 c0,0 -5,0 -5,-5 c0,-5 10,-5 10,0"/> <!-- Detale cestusa -->
+      <path d="M540,170 c0,0 5,10 20,10"/> <!-- Mięśnie brzucha -->
+      <path d="M540,190 c0,0 5,10 20,10"/> <!-- Mięśnie brzucha -->
+    </g>
+    
+    <!-- Elementy palestry -->
+    <g fill="#e8b27d">
+      <rect x="150" y="320" width="10" height="130"/> <!-- Słupek palestry -->
+      <rect x="350" y="320" width="10" height="130"/> <!-- Słupek palestry -->
+      <rect x="550" y="320" width="10" height="130"/> <!-- Słupek palestry -->
+      
+      <path d="M50,350 c0,0 20,-10 50,-10 c30,0 50,10 50,10"/> <!-- Zwisający ręcznik -->
+      <rect x="460" y="350" width="40" height="20" rx="5"/> <!-- Pojemnik z oliwą -->
+      <path d="M630,370 c0,0 -10,-20 0,-20 c10,0 20,10 20,20 c0,10 -10,20 -20,20"/> <!-- Strigil (skrobaczka) -->
+    </g>
+    
+    <!-- Detale czarne -->
+    <g fill="none" stroke="#000000" stroke-width="1.5">
+      <line x1="50" y1="350" x2="200" y2="350"/> <!-- Lina palestry -->
+      <line x1="250" y1="350" x2="450" y2="350"/> <!-- Lina palestry -->
+      <line x1="500" y1="350" x2="650" y2="350"/> <!-- Lina palestry -->
+      
+      <path d="M80,350 c0,0 0,10 -10,20"/> <!-- Fałdy ręcznika -->
+      <path d="M100,350 c0,0 0,10 -10,20"/> <!-- Fałdy ręcznika -->
+      <path d="M120,350 c0,0 0,10 -10,20"/> <!-- Fałdy ręcznika -->
+      
+      <rect x="460" y="350" width="40" height="20" rx="5"/> <!-- Obrys pojemnika -->
+      <line x1="465" y1="360" x2="495" y2="360"/> <!-- Detal pojemnika -->
+    </g>
+  </g>
+  
+  <!-- Wzór geometryczny na dolnym pasie -->
+  <g fill="#000000">
+    <path d="M20,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M70,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M120,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M170,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M220,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M270,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M320,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M370,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M420,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M470,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M520,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M570,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M620,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M670,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M720,740 l30,0 l10,40 l-50,0 z"/>
+    <path d="M770,740 l30,0 l10,40 l-50,0 z"/>
+  </g>
+  
+  <!-- Wzór palmety na środkowym pasie -->
+  <g transform="translate(0, 600)">
+    <g fill="#e8b27d">
+      <path d="M50,0 c0,0 25,-30 50,0 c25,-30 50,0 50,0 c-20,20 -40,20 -50,20 c-10,0 -30,0 -50,-20 z"/> <!-- Pierwsza palmeta -->
+      <path d="M200,0 c0,0 25,-30 50,0 c25,-30 50,0 50,0 c-20,20 -40,20 -50,20 c-10,0 -30,0 -50,-20 z"/> <!-- Druga palmeta -->
+      <path d="M350,0 c0,0 25,-30 50,0 c25,-30 50,0 50,0 c-20,20 -40,20 -50,20 c-10,0 -30,0 -50,-20 z"/> <!-- Trzecia palmeta -->
+      <path d="M500,0 c0,0 25,-30 50,0 c25,-30 50,0 50,0 c-20,20 -40,20 -50,20 c-10,0 -30,0 -50,-20 z"/> <!-- Czwarta palmeta -->
+      <path d="M650,0 c0,0 25,-30 50,0 c25,-30 50,0 50,0 c-20,20 -40,20 -50,20 c-10,0 -30,0 -50,-20 z"/> <!-- Piąta palmeta -->
+    </g>
+    
+    <!-- Detale czarne -->
+    <g fill="none" stroke="#000000" stroke-width="1.5">
+      <path d="M75,-15 c0,0 0,10 0,15"/> <!-- Detal pierwszej palmety -->
+      <path d="M100,-20 c0,0 0,15 0,20"/> <!-- Detal pierwszej palmety -->
+      <path d="M125,-15 c0,0 0,10 0,15"/> <!-- Detal pierwszej palmety -->
+      
+      <path d="M225,-15 c0,0 0,10 0,15"/> <!-- Detal drugiej palmety -->
+      <path d="M250,-20 c0,0 0,15 0,20"/> <!-- Detal drugiej palmety -->
+      <path d="M275,-15 c0,0 0,10 0,15"/> <!-- Detal drugiej palmety -->
+      
+      <path d="M375,-15 c0,0 0,10 0,15"/> <!-- Detal trzeciej palmety -->
+      <path d="M400,-20 c0,0 0,15 0,20"/> <!-- Detal trzeciej palmety -->
+      <path d="M425,-15 c0,0 0,10 0,15"/> <!-- Detal trzeciej palmety -->
+      
+      <path d="M525,-15 c0,0 0,10 0,15"/> <!-- Detal czwartej palmety -->
+      <path d="M550,-20 c0,0 0,15 0,20"/> <!-- Detal czwartej palmety -->
+      <path d="M575,-15 c0,0 0,10 0,15"/> <!-- Detal czwartej palmety -->
+      
+      <path d="M675,-15 c0,0 0,10 0,15"/> <!-- Detal piątej palmety -->
+      <path d="M700,-20 c0,0 0,15 0,20"/> <!-- Detal piątej palmety -->
+      <path d="M725,-15 c0,0 0,10 0,15"/> <!-- Detal piątej palmety -->
+    </g>
+  </g>
+</svg>
