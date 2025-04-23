@@ -4,6 +4,8 @@ import { useVaseManager } from "../hooks/useVaseManager";
 import { useSceneSetup } from "../hooks/useSceneSetup";
 import { useShardManager } from "../hooks/useShardManager";
 import { useGalleryLoader } from "../hooks/useGalleryLoader";
+import { useFrame, useThree } from "@react-three/fiber";
+import * as THREE from "three";
 // Remove empty import block
 // import {
 // } from "../features/greek-vases/threeUtils";
@@ -19,8 +21,51 @@ const GreekVases = () => {
     cameraHeight,
   });
 
-  // Load the gallery model using the new hook
-  useGalleryLoader({ sceneRef });
+  // Load the gallery model and other elements using the updated hook
+  const { windowPane, backgroundPlane, directionalLight } = useGalleryLoader({
+    sceneRef,
+  });
+
+  // Store initial background position for parallax
+  const initialBackgroundPosition = useRef<THREE.Vector3 | null>(null);
+
+  // Add returned objects to the scene imperatively when they are loaded
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    const objectsToAdd: (THREE.Object3D | null)[] = [
+      windowPane,
+      backgroundPlane,
+      directionalLight,
+    ];
+
+    objectsToAdd.forEach((obj) => {
+      if (obj) {
+        scene.add(obj);
+        // If directional light, also add its target if not already parented
+        if (obj instanceof THREE.DirectionalLight && !obj.target.parent) {
+          scene.add(obj.target);
+        }
+        // Store initial background position once loaded
+        if (obj === backgroundPlane && !initialBackgroundPosition.current) {
+          initialBackgroundPosition.current = obj.position.clone();
+        }
+      }
+    });
+
+    // Cleanup: remove objects when component unmounts or objects change
+    return () => {
+      objectsToAdd.forEach((obj) => {
+        if (obj && obj.parent === scene) {
+          scene.remove(obj);
+          if (obj instanceof THREE.DirectionalLight) {
+            scene.remove(obj.target);
+          }
+        }
+      });
+    };
+  }, [sceneRef, windowPane, backgroundPlane, directionalLight]); // Rerun when objects are loaded
 
   // Pass refs from useSceneSetup to other hooks
   const { updatePlayerPosition } = usePlayerControls({
@@ -79,9 +124,32 @@ const GreekVases = () => {
     let animationId: number;
     function animate() {
       animationId = requestAnimationFrame(animate);
+
+      // --- Parallax Effect --- Moved inside animate loop
+      if (
+        backgroundPlane &&
+        initialBackgroundPosition.current &&
+        cameraRef.current
+      ) {
+        const parallaxFactor = 0.1; // Adjust for desired effect strength
+        const camera = cameraRef.current;
+        // Calculate offset based on camera's deviation from origin (or initial pos)
+        const offsetX = -(camera.position.x * parallaxFactor);
+        // We might not want vertical parallax, or use a different factor
+        const offsetY = -(camera.position.y * parallaxFactor * 0.5); // Example Y parallax
+
+        backgroundPlane.position.x =
+          initialBackgroundPosition.current.x + offsetX;
+        backgroundPlane.position.y =
+          initialBackgroundPosition.current.y + offsetY;
+        backgroundPlane.position.z = initialBackgroundPosition.current.z;
+      }
+      // --- End Parallax ---
+
       if (isPointerLocked) {
         updatePlayerPosition();
       }
+
       updateShards();
       renderer.render(scene, camera);
     }
@@ -117,6 +185,7 @@ const GreekVases = () => {
     rendererRef,
     updateShards,
     cleanupShards,
+    backgroundPlane,
   ]);
 
   return (

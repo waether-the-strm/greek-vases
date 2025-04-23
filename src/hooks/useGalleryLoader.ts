@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 // Import the asset URLs using Vite's ?url feature
 import galleryModelUrl from "/assets/uploads_files_2797881_AircraftHangarCarGarage.glb?url";
 import windowTextureUrl from "/assets/window_texture.png?url"; // Import window texture URL
-import backgroundTextureUrl from "/assets/background_view.jpg?url"; // Import background texture URL
+import backgroundTextureUrl from "/assets/background_view2.jpg?url"; // Import background texture URL
 
 interface GalleryLoaderProps {
   sceneRef: React.MutableRefObject<THREE.Scene | null>;
