@@ -17,10 +17,10 @@ const pastelPalette = [
 ];
 
 // Define types for clarity
-// Define BrokenVaseInfo locally since it's used but not imported
+// Update BrokenVaseInfo to use shardColor
 interface BrokenVaseInfo {
   position: THREE.Vector3;
-  color: THREE.Color;
+  shardColor: THREE.Color;
 }
 
 interface VaseManagerProps {
@@ -30,24 +30,25 @@ interface VaseManagerProps {
   initialBrokenVases?: number;
 }
 
-// --- Function to Apply Pastel Colors to Pedestals (Moved Before Loop) ---
+// --- Function to Apply Pastel Colors to Pedestals ---
+// Modified to return the applied color
 const applyPastelToPedestal = (
   pedestal: THREE.Group,
   vaseToIgnore: THREE.Mesh
-) => {
-  const color = pastelPalette[Math.floor(Math.random() * pastelPalette.length)];
+): number => {
+  const colorHex =
+    pastelPalette[Math.floor(Math.random() * pastelPalette.length)];
   pedestal.traverse((child) => {
-    // Check if child is a Mesh, NOT the specific vase to ignore, and has a single material
     if (
       child instanceof THREE.Mesh &&
-      child !== vaseToIgnore && // <<< CHANGE: Compare directly with the vase object
+      child !== vaseToIgnore &&
       child.material &&
       !Array.isArray(child.material)
     ) {
-      // Assuming pedestal material is MeshStandardMaterial or similar
-      (child.material as THREE.MeshStandardMaterial).color.set(color);
+      (child.material as THREE.MeshStandardMaterial).color.set(colorHex);
     }
   });
+  return colorHex; // Return the applied color hex value
 };
 // --- End Function Definition ---
 
@@ -95,9 +96,17 @@ export const useVaseManager = ({
       const leftVase = createVaseOnPedestal(leftPedestal, -5, i * 2);
       const rightVase = createVaseOnPedestal(rightPedestal, 5, i * 2);
 
-      // Apply pastel colors to PEDESTALS, ignoring the specific vase
-      if (leftVase) applyPastelToPedestal(leftPedestal, leftVase);
-      if (rightVase) applyPastelToPedestal(rightPedestal, rightVase);
+      // Apply pastel colors to PEDESTALS and store the color in vase userData
+      let leftPedestalColor = 0xffffff; // Default color
+      let rightPedestalColor = 0xffffff;
+      if (leftVase) {
+        leftPedestalColor = applyPastelToPedestal(leftPedestal, leftVase);
+        leftVase.userData.pedestalColor = leftPedestalColor; // Store color
+      }
+      if (rightVase) {
+        rightPedestalColor = applyPastelToPedestal(rightPedestal, rightVase);
+        rightVase.userData.pedestalColor = rightPedestalColor; // Store color
+      }
 
       // --- Adjust Vase Material Properties ---
       const adjustVaseMaterial = (vase: THREE.Mesh) => {
@@ -154,19 +163,20 @@ export const useVaseManager = ({
           const worldPosition = new THREE.Vector3();
           vase.getWorldPosition(worldPosition);
 
-          // Assuming vase.material is MeshStandardMaterial or similar
-          const baseMaterial = vase.material as THREE.MeshStandardMaterial;
-          // Use the actual vase color if available, otherwise fallback to white
-          const baseColor =
-            baseMaterial.color?.clone() || new THREE.Color(0xffffff); // Keep fallback as white
+          // Retrieve pedestal color from userData
+          const pedestalColorHex = vase.userData.pedestalColor || 0xffffff; // Use stored color or white fallback
+          const shardColor = new THREE.Color(pedestalColorHex);
 
           // IMPORTANT: Dispose vase resources BEFORE removing from parent
-          if (baseMaterial.map) {
-            baseMaterial.map.dispose(); // Dispose vase texture
-          }
-          baseMaterial.dispose();
-          if (vase.geometry) {
-            vase.geometry.dispose();
+          if (vase.material && !Array.isArray(vase.material)) {
+            const baseMaterial = vase.material as THREE.MeshStandardMaterial;
+            if (baseMaterial.map) {
+              baseMaterial.map.dispose(); // Dispose vase texture
+            }
+            baseMaterial.dispose();
+            if (vase.geometry) {
+              vase.geometry.dispose();
+            }
           }
 
           // Remove vase from scene (parent pedestal)
@@ -177,10 +187,10 @@ export const useVaseManager = ({
 
           playBreakSound();
 
-          // Notify that a vase was broken for shard creation
+          // Notify that a vase was broken for shard creation, passing pedestal color
           onVaseBrokenRef.current({
             position: worldPosition,
-            color: baseColor,
+            shardColor: shardColor, // Pass the pedestal color as shardColor
           });
         }
       }

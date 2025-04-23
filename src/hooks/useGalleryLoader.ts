@@ -52,7 +52,7 @@ export const useGalleryLoader = ({
 
         // Optional: Adjust model scale, position, rotation if needed
         loadedGalleryModel.scale.set(0.02, 0.02, 0.02); // Scale down further
-        // loadedGalleryModel.position.set(0, 0, 0);
+        loadedGalleryModel.position.set(0, 1.7, 0);
         // loadedGalleryModel.rotation.y = Math.PI; // Example rotation
 
         // Enable shadows and disable frustum culling for all meshes

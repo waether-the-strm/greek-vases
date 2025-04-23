@@ -31,9 +31,10 @@ const setupLights = (scene: THREE.Scene) => {
 const setupFloor = (scene: THREE.Scene) => {
   const floorGeometry = new THREE.PlaneGeometry(50, 50); // Large plane
   const floorMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffdfba, // Light peach pastel color
+    color: 0xffefc9, // Light peach pastel color
+    // color: 0x302b22, // Very dark brown color
     roughness: 0.8,
-    metalness: 0.1,
+    metalness: 0.2,
     side: THREE.DoubleSide, // Render both sides just in case
   });
   const floor = new THREE.Mesh(floorGeometry, floorMaterial);
@@ -41,12 +42,12 @@ const setupFloor = (scene: THREE.Scene) => {
   floor.position.y = 0; // Position at ground level
   floor.receiveShadow = true;
   scene.add(floor);
-  console.log(
-    "Floor parent UUID:",
-    floor.parent?.uuid,
-    "Scene UUID:",
-    scene.uuid
-  ); // Log parent UUID
+  // console.log(
+  //   "Floor parent UUID:",
+  //   floor.parent?.uuid,
+  //   "Scene UUID:",
+  //   scene.uuid
+  // ); // Log parent UUID
   return floor;
 };
 

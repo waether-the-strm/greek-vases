@@ -169,7 +169,7 @@ export function createPedestal(x: number, z: number): THREE.Group {
   // Column Shaft
   const columnGeometry = new THREE.CylinderGeometry(
     0.4,
-    0.4,
+    0.5,
     columnHeight,
     24,
     1
@@ -227,7 +227,7 @@ export function createPedestal(x: number, z: number): THREE.Group {
   const capGeometry = new THREE.CylinderGeometry(0.5, 0.4, capHeight, 24);
   const capMaterial = new THREE.MeshStandardMaterial({
     color: 0xf0f0f0,
-    roughness: 0.2,
+    roughness: 0.1,
   });
   const cap = new THREE.Mesh(capGeometry, capMaterial);
   cap.position.y = baseHeight + columnHeight + capHeight / 2;

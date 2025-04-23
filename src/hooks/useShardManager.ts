@@ -8,7 +8,7 @@ interface ShardManagerProps {
 
 interface ShardInfo {
   position: THREE.Vector3;
-  color: THREE.Color;
+  shardColor: THREE.Color;
 }
 
 // Define structure for shard user data
@@ -26,7 +26,7 @@ export const useShardManager = ({ sceneRef }: ShardManagerProps) => {
     (info: ShardInfo) => {
       if (!sceneRef.current) return;
       const scene = sceneRef.current;
-      const { position: worldPosition, color: baseColor } = info;
+      const { position: worldPosition, shardColor } = info;
 
       const numberOfShards = 12 + Math.floor(Math.random() * 8);
       const newShards: THREE.Mesh[] = [];
@@ -61,9 +61,9 @@ export const useShardManager = ({ sceneRef }: ShardManagerProps) => {
 
         const material = new THREE.MeshStandardMaterial({
           color: new THREE.Color(
-            baseColor.r + (Math.random() * 0.1 - 0.05),
-            baseColor.g + (Math.random() * 0.1 - 0.05),
-            baseColor.b + (Math.random() * 0.1 - 0.05)
+            shardColor.r + (Math.random() * 0.1 - 0.05),
+            shardColor.g + (Math.random() * 0.1 - 0.05),
+            shardColor.b + (Math.random() * 0.1 - 0.05)
           ),
           roughness: 0.6 + Math.random() * 0.3,
           metalness: 0.1 + Math.random() * 0.1,
