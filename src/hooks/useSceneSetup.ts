@@ -1,6 +1,7 @@
 import { useRef, useEffect } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 interface SceneSetupProps {
   mountRef: React.RefObject<HTMLDivElement>;
@@ -30,7 +31,7 @@ const setupLights = (scene: THREE.Scene) => {
 const setupFloor = (scene: THREE.Scene) => {
   const floorGeometry = new THREE.PlaneGeometry(50, 50); // Large plane
   const floorMaterial = new THREE.MeshStandardMaterial({
-    color: 0x555555, // Different gray for visibility
+    color: 0xffdfba, // Light peach pastel color
     roughness: 0.8,
     metalness: 0.1,
     side: THREE.DoubleSide, // Render both sides just in case
@@ -81,6 +82,7 @@ export const useSceneSetup = ({ mountRef, cameraHeight }: SceneSetupProps) => {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const pmremGeneratorRef = useRef<THREE.PMREMGenerator | null>(null);
   const environmentTextureRef = useRef<THREE.Texture | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -109,20 +111,32 @@ export const useSceneSetup = ({ mountRef, cameraHeight }: SceneSetupProps) => {
     const environment = new RoomEnvironment();
     const envTexture = pmremGenerator.fromScene(environment, 0.04).texture;
     scene.environment = envTexture;
-    scene.background = new THREE.Color(0x333333);
+    scene.background = new THREE.Color(0xcccccc);
     environmentTextureRef.current = envTexture;
     environment.dispose();
     sceneRef.current = scene;
 
     // Camera
-    const camera = new THREE.PerspectiveCamera(70, width / height, 0.01, 1000);
-    camera.position.set(0, cameraHeight, -12);
+    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+    camera.position.set(0, cameraHeight, 10);
     cameraRef.current = camera;
 
     // Setup environment elements
     const lights = setupLights(scene);
     const floor = setupFloor(scene);
-    const measurementMarkers = setupMeasurementHelpers(scene);
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+
+    // OrbitControls for debugging/alternative view
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.screenSpacePanning = false;
+    controls.maxPolarAngle = Math.PI / 2;
+    controls.enabled = false;
+    controlsRef.current = controls;
 
     // Basic resize handling within the setup hook
     const handleResize = () => {
@@ -154,12 +168,6 @@ export const useSceneSetup = ({ mountRef, cameraHeight }: SceneSetupProps) => {
           floor.material.dispose();
         }
       }
-      // Cleanup markers
-      measurementMarkers.forEach((marker) => {
-        scene.remove(marker);
-        marker.geometry.dispose();
-        // Material is shared, dispose only once if needed, but MeshBasicMaterial is cheap
-      });
 
       // Cleanup environment map and generator
       if (environmentTextureRef.current) {
@@ -183,8 +191,9 @@ export const useSceneSetup = ({ mountRef, cameraHeight }: SceneSetupProps) => {
       sceneRef.current = null;
       cameraRef.current = null;
       rendererRef.current = null;
+      controlsRef.current = null;
     };
   }, [mountRef, cameraHeight]);
 
-  return { sceneRef, cameraRef, rendererRef };
+  return { sceneRef, cameraRef, rendererRef, controlsRef };
 };

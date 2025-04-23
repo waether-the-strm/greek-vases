@@ -57,14 +57,23 @@ export const useGalleryLoader = ({
 
         // Enable shadows and disable frustum culling for all meshes
         loadedGalleryModel.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
+          // Check if child is a Mesh before accessing material/shadow properties
+          if (child instanceof THREE.Mesh) {
             child.castShadow = true;
             child.receiveShadow = true;
             child.frustumCulled = false;
-            // Optional: Adjust materials if needed
-            // if ((child as THREE.Mesh).material) {
-            //   ((child as THREE.Mesh).material as THREE.MeshStandardMaterial).envMapIntensity = 0.5; // Example adjustment
-            // }
+            // Apply base pastel color to hangar materials
+            if (child.material && !Array.isArray(child.material)) {
+              // Assuming MeshStandardMaterial or similar with a color property
+              (child.material as THREE.MeshStandardMaterial).color.set(
+                0xbae1ff
+              ); // Light blue
+              // Optional: Adjust other material properties if needed
+              // (child.material as THREE.MeshStandardMaterial).roughness = 0.9;
+            }
+            // Optional: Adjust materials if needed (Example was envMapIntensity)
+            // if (child.material && !Array.isArray(child.material)) { // Ensure check here too
+            //   ((child.material as THREE.MeshStandardMaterial).envMapIntensity = 0.5;
           }
         });
 

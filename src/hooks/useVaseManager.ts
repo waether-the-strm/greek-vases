@@ -6,44 +6,28 @@ import {
   playBreakSound,
 } from "../features/greek-vases/threeUtils";
 
-// Function to recursively dispose of object resources
-const disposeObject = (object: THREE.Object3D) => {
-  if (object instanceof THREE.Mesh) {
-    if (object.geometry) {
-      object.geometry.dispose();
-    }
-    if (object.material) {
-      if (Array.isArray(object.material)) {
-        object.material.forEach((material) => {
-          if (material.map) material.map.dispose();
-          // Dispose other maps if needed (normalMap, envMap, etc.)
-          material.dispose();
-        });
-      } else {
-        if (object.material.map) object.material.map.dispose();
-        // Dispose other maps if needed
-        object.material.dispose();
-      }
-    }
-  }
-  // Recursively dispose children
-  while (object.children.length > 0) {
-    disposeObject(object.children[0]);
-    object.remove(object.children[0]); // Remove child after disposal
-  }
-};
+// Define the pastel color palette (for pedestals)
+const pastelPalette = [
+  0xffb3ba, // light pink
+  0xffdfba, // light peach
+  0xffffba, // light yellow
+  0xbaffc9, // light green
+  0xbae1ff, // light blue
+  0xe0bbe4, // light purple
+];
 
 // Define types for clarity
+// Define BrokenVaseInfo locally since it's used but not imported
+interface BrokenVaseInfo {
+  position: THREE.Vector3;
+  color: THREE.Color;
+}
+
 interface VaseManagerProps {
   sceneRef: React.RefObject<THREE.Scene | null>;
   cameraRef: React.RefObject<THREE.PerspectiveCamera | null>;
   isPointerLocked: boolean;
   initialBrokenVases?: number;
-}
-
-interface BrokenVaseInfo {
-  position: THREE.Vector3;
-  color: THREE.Color;
 }
 
 export const useVaseManager = ({
@@ -70,7 +54,6 @@ export const useVaseManager = ({
     // Clear previous objects managed by this hook
     pedestalsRef.current.forEach((p) => {
       scene.remove(p);
-      disposeObject(p); // Dispose pedestal and its children
     });
     pedestalsRef.current = [];
     vasesRef.current = []; // Vases are children of pedestals, disposed above
@@ -87,8 +70,30 @@ export const useVaseManager = ({
       scene.add(rightPedestal);
       newPedestals.push(leftPedestal, rightPedestal);
 
+      // Create vases using the original function call (NO COLOR CHANGE HERE)
       const leftVase = createVaseOnPedestal(leftPedestal, -5, i * 2);
       const rightVase = createVaseOnPedestal(rightPedestal, 5, i * 2);
+
+      // --- Apply pastel colors to PEDESTALS ---
+      const applyPastelToPedestal = (pedestal: THREE.Group) => {
+        const color =
+          pastelPalette[Math.floor(Math.random() * pastelPalette.length)];
+        pedestal.traverse((child) => {
+          if (
+            child instanceof THREE.Mesh &&
+            child.material &&
+            !Array.isArray(child.material)
+          ) {
+            // Assuming pedestal material is MeshStandardMaterial or similar
+            (child.material as THREE.MeshStandardMaterial).color.set(color);
+          }
+        });
+      };
+
+      applyPastelToPedestal(leftPedestal);
+      applyPastelToPedestal(rightPedestal);
+      // --- End applying colors to pedestals ---
+
       newVases.push(leftVase, rightVase);
     }
     vasesRef.current = newVases;
@@ -101,7 +106,6 @@ export const useVaseManager = ({
       if (currentScene) {
         pedestalsRef.current.forEach((p) => {
           currentScene.remove(p); // Remove from the scene
-          disposeObject(p); // Dispose pedestal and its children (including textures)
         });
       }
       // Clear refs
@@ -133,9 +137,11 @@ export const useVaseManager = ({
           const worldPosition = new THREE.Vector3();
           vase.getWorldPosition(worldPosition);
 
+          // Assuming vase.material is MeshStandardMaterial or similar
           const baseMaterial = vase.material as THREE.MeshStandardMaterial;
+          // Use the actual vase color if available, otherwise fallback to white
           const baseColor =
-            baseMaterial.color?.clone() || new THREE.Color(0xe8b27d);
+            baseMaterial.color?.clone() || new THREE.Color(0xffffff); // Keep fallback as white
 
           // IMPORTANT: Dispose vase resources BEFORE removing from parent
           if (baseMaterial.map) {
